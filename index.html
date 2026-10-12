@@ -1,0 +1,1549 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Arms Dealer</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%231E3429'/%3E%3Cpath d='M16 5l9 11-9 11-9-11z' fill='none' stroke='%23D2A94A' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%23D2A94A'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ECEEE9; --card:#FAFBF8; --card-2:#F3F5F0; --line:#D7DBD3; --line-soft:#E4E7E0;
+  --ink:#1E2622; --muted:#66706A; --faint:#98A19B;
+  --spruce:#14231C; --spruce-2:#1E3429; --spruce-3:#2B4538; --spruce-ink:#AFC0B6;
+  --primary:#1F4A38; --primary-2:#173A2C;
+  --brass:#A97F25; --brass-2:#D2A94A; --brass-soft:#F1E7CC; --brass-ink:#6E5114; --ivory:#F2EBD6;
+  --brick:#B03F2E; --brick-soft:#F4DDD7; --ok:#2F7A4B; --ok-soft:#DCEBDD; --warn-soft:#F6EBC8;
+  --ammo:#A8613A; --gun:#4C5E73; --gear:#2E7F78;
+  --stealth:#4B5B94; --assault:#B03F2E; --tech:#2E7F78; --grand:#A97F25;
+  --focus:#3566D6; --r-card:14px; --r-ctl:8px; --sidebar:228px;
+  font-family:'Instrument Sans',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  font-size:15px; line-height:1.45; color:var(--ink); -webkit-font-smoothing:antialiased;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg)}
+body{min-height:100vh;font-variant-numeric:tabular-nums}
+h1,h2,h3,h4,p{margin:0}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+[hidden]{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.muted{color:var(--muted)} .faint{color:var(--faint)} .num{font-variant-numeric:tabular-nums}
+.money{color:var(--brass-ink);font-weight:600}
+.bad{color:var(--brick)} .good{color:var(--ok)}
+
+/* ---------- shell ---------- */
+#app{display:grid;grid-template-columns:var(--sidebar) minmax(0,1fr);min-height:100vh}
+.side{background:var(--spruce);color:var(--spruce-ink);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:18px 12px}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 10px 20px;color:var(--ivory);font-weight:650;font-size:17px;letter-spacing:-.01em}
+.brand svg{flex:none}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:0;border-radius:var(--r-ctl);background:none;color:var(--spruce-ink);font-weight:500;text-align:left}
+.nav button:hover{background:rgba(255,255,255,.05);color:#fff}
+.nav button[aria-current=page]{background:var(--spruce-2);color:#fff}
+.nav svg{flex:none;width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.nav .badge{margin-left:auto;min-width:20px;padding:1px 7px;border-radius:99px;background:var(--brass);color:#1a1405;font-size:12px;font-weight:700;text-align:center}
+.side-foot{margin-top:auto;padding:12px 10px 4px;border-top:1px solid var(--spruce-3);display:flex;flex-direction:column;gap:6px}
+.side-foot .who{color:#fff;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.side-foot button{background:none;border:0;padding:2px 0;color:var(--spruce-ink);text-align:left;font-size:14px}
+.side-foot button:hover{color:#fff;text-decoration:underline}
+
+.main{min-width:0}
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:28px;padding:12px 28px;background:rgba(236,238,233,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.stat{display:flex;flex-direction:column;min-width:0}
+.stat .k{font-size:12.5px;color:var(--muted)}
+.stat .v{font-size:20px;font-weight:650;letter-spacing:-.01em;line-height:1.15}
+.stat .v.brass{color:var(--brass-ink)}
+.stat .sub{font-size:12.5px;color:var(--muted)}
+.xp{width:130px}
+.xp .bar{margin-top:7px}
+.topbar .grow{flex:1}
+.sp-pill{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:99px;border:1px solid var(--line);background:var(--card);font-weight:600}
+.sp-pill:hover{border-color:#BFC5BB;background:#fff}
+.sp-pill.has{background:var(--brass-soft);border-color:#DCC88E;color:var(--brass-ink)}
+
+#page{padding:26px 28px 60px;max-width:1320px}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.page-head h1{font-size:28px;font-weight:650;letter-spacing:-.02em}
+.page-head .sub{color:var(--muted);margin-top:2px}
+.head-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* ---------- controls ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:8px 14px;border-radius:var(--r-ctl);border:1px solid var(--line);background:var(--card);color:var(--ink);font-weight:500;font-size:14px;line-height:1.2;transition:background .15s,border-color .15s;white-space:nowrap}
+.btn:hover{background:#fff;border-color:#BFC5BB}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn.primary:hover{background:var(--primary-2);border-color:var(--primary-2)}
+.btn.brass{background:var(--brass);border-color:var(--brass);color:#18130a}
+.btn.brass:hover{background:#9a7320}
+.btn.danger{color:var(--brick)}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn.block{width:100%}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.poor{opacity:.5}
+.btn.primary.poor{opacity:.55}
+.icon-btn{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:var(--r-ctl);border:1px solid transparent;background:none;color:var(--muted)}
+.icon-btn:hover{background:var(--card-2);border-color:var(--line);color:var(--ink)}
+.icon-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13.5px;font-weight:500}
+.input{width:100%;padding:9px 12px;border-radius:var(--r-ctl);border:1px solid var(--line);background:#fff;transition:border-color .15s}
+.input:hover{border-color:#BFC5BB}
+.input:focus{outline:2px solid var(--focus);outline-offset:0;border-color:var(--focus)}
+.hint{font-size:13px;color:var(--muted)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:var(--card);font-size:13.5px;font-weight:500;color:var(--ink)}
+.chip:hover{background:#fff;border-color:#BFC5BB}
+.chip[aria-pressed=true]{background:var(--spruce);border-color:var(--spruce);color:#fff}
+.chip .n{opacity:.65;margin-left:5px;font-weight:400}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:99px;font-size:12.5px;font-weight:550;background:#E6E9E2;color:#46514A;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:#245d3a} .pill.bad{background:var(--brick-soft);color:#8e2f20}
+.pill.brass{background:var(--brass-soft);color:var(--brass-ink)} .pill.warn{background:var(--warn-soft);color:#6a5410}
+.pill.stealth{background:#E1E5F4;color:#36447a} .pill.assault{background:var(--brick-soft);color:#8e2f20}
+.pill.tech{background:#D9ECEA;color:#1f6560} .pill.grand{background:var(--brass-soft);color:var(--brass-ink)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--c,var(--faint));flex:none}
+[data-cat=ammo]{--c:var(--ammo)} [data-cat=gun]{--c:var(--gun)} [data-cat=gear]{--c:var(--gear)}
+.bar{height:6px;border-radius:99px;background:#E1E5DD;overflow:hidden}
+.bar>i{display:block;height:100%;width:0;border-radius:inherit;background:var(--c,var(--brass));transition:width .25s linear}
+.bar.thick{height:10px}
+.switch{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px}
+.switch input{position:absolute;opacity:0;pointer-events:none}
+.switch .track{width:34px;height:20px;border-radius:99px;background:#C7CDC3;position:relative;flex:none;transition:background .15s}
+.switch .track::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.switch input:checked+.track{background:var(--primary)}
+.switch input:checked+.track::after{transform:translateX(14px)}
+.switch input:focus-visible+.track{outline:2px solid var(--focus);outline-offset:2px}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);padding:20px}
+.panel>h2{font-size:17px;font-weight:650;letter-spacing:-.01em;margin-bottom:14px}
+.panel.flush{padding:0;overflow:hidden}
+.empty{padding:28px 12px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font-weight:600;margin-bottom:4px}
+
+/* ---------- onboarding ---------- */
+.guide{margin-bottom:20px;display:grid;grid-template-columns:1fr auto;gap:10px 20px;align-items:center;padding:16px 20px;border-radius:var(--r-card);background:var(--brass-soft);border:1px solid #E2D2A2}
+.guide h2{font-size:16px;font-weight:650}
+.guide ol{grid-column:1/-1;margin:2px 0 0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px 18px;counter-reset:s}
+.guide li{display:flex;gap:10px;align-items:flex-start;font-size:14px;counter-increment:s}
+.guide li::before{content:counter(s);flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;font-weight:700;background:#fff;color:var(--brass-ink);border:1px solid #DCC88E}
+.guide li.done{color:var(--muted);text-decoration:line-through}
+.guide li.done::before{content:"\2713";background:var(--ok);color:#fff;border-color:var(--ok)}
+.guide li button{background:none;border:0;padding:0;font:inherit;text-decoration:underline;text-underline-offset:2px;color:inherit;text-align:left}
+
+/* ---------- production ---------- */
+.slot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:24px}
+.slot{background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);padding:18px;display:flex;flex-direction:column;gap:14px}
+.slot header{display:flex;align-items:flex-start;gap:10px}
+.slot header h3{font-size:16.5px;font-weight:650;letter-spacing:-.01em;line-height:1.25}
+.slot header .meta{font-size:13px;color:var(--muted)}
+.slot header .push{margin-left:auto}
+.slot .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.slot .stats .k{display:block;font-size:12.5px;color:var(--muted)}
+.slot .stats .v{font-size:16px;font-weight:620}
+.slot .line{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;color:var(--muted)}
+.slot .line b{color:var(--ink);font-weight:600}
+.slot .upg{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:8px}
+.slot.empty-slot{align-items:center;justify-content:center;text-align:center;min-height:220px;border-style:dashed;background:transparent;gap:10px}
+.slot.empty-slot p{color:var(--muted)}
+.slot .boost{font-size:12.5px;color:var(--muted)}
+
+.feed{list-style:none;margin:0;padding:0}
+.feed li{display:flex;gap:12px;justify-content:space-between;padding:9px 0;border-top:1px solid var(--line-soft);font-size:14px}
+.feed li:first-child{border-top:0}
+.feed time{color:var(--faint);white-space:nowrap;font-size:13px}
+
+/* ---------- list rows (warehouse / market / picker) ---------- */
+.rows{display:flex;flex-direction:column}
+.row{display:grid;align-items:center;gap:14px;padding:12px 18px;border-top:1px solid var(--line-soft)}
+.row:first-child{border-top:0}
+.row.head{padding-top:10px;padding-bottom:10px;font-size:13px;color:var(--muted);background:var(--card-2);border-bottom:1px solid var(--line-soft)}
+.row .nm{display:flex;align-items:center;gap:10px;min-width:0}
+.row .nm b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .nm small{color:var(--muted);font-size:13px;white-space:nowrap}
+.row .acts{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+.wh .row{grid-template-columns:minmax(0,2.2fr) minmax(130px,1.4fr) minmax(120px,1fr) auto}
+.wh .qtycell{display:flex;flex-direction:column;gap:5px}
+.wh .qtycell b{font-weight:600}
+.mk .row{grid-template-columns:minmax(0,2fr) 90px 130px minmax(100px,1fr) auto}
+.cols2{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line-soft)}
+.toolbar .input{max-width:260px}
+
+/* ---------- task force ---------- */
+.hire-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:22px}
+.hire{display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid var(--line);border-radius:var(--r-card);background:var(--card)}
+.hire h3{font-size:16px;font-weight:650}
+.hire p{font-size:13.5px;color:var(--muted)}
+.crew-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+.op{display:flex;flex-direction:column;gap:12px;padding:18px;border:1px solid var(--line);border-radius:var(--r-card);background:var(--card)}
+.op header{display:flex;gap:10px;align-items:flex-start}
+.op header h3{font-size:16.5px;font-weight:650}
+.op header .meta{color:var(--muted);font-size:13px}
+.op header .push{margin-left:auto;text-align:right}
+.loadout{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.slotbtn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:9px 11px;border-radius:var(--r-ctl);border:1px dashed #BCC3B8;background:var(--card-2);text-align:left;min-width:0}
+.slotbtn:hover{border-color:var(--primary);background:#fff}
+.slotbtn .k{font-size:12px;color:var(--muted)}
+.slotbtn .v{font-weight:600;font-size:14px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slotbtn.filled{border-style:solid;border-color:var(--line);background:#fff}
+.slotbtn.wide{grid-column:1/-1}
+.slotbtn[disabled]{opacity:.55;cursor:not-allowed}
+.op footer{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13.5px;color:var(--muted)}
+
+/* ---------- missions ---------- */
+.mis{display:grid;grid-template-columns:330px minmax(0,1fr);gap:20px;align-items:start}
+.mlist{display:flex;flex-direction:column;max-height:calc(100vh - 150px);overflow:auto;position:sticky;top:84px}
+.mlist h3{font-size:13.5px;font-weight:600;color:var(--muted);padding:12px 16px 6px;background:var(--card);position:sticky;top:0;z-index:1}
+.mitem{display:flex;flex-direction:column;gap:3px;padding:11px 16px;border:0;border-top:1px solid var(--line-soft);background:none;text-align:left;width:100%}
+.mitem:hover{background:var(--card-2)}
+.mitem[aria-current=true]{background:#E9EFE9;box-shadow:inset 3px 0 0 var(--primary)}
+.mitem .t{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.mitem .t b{font-weight:600}
+.mitem .s{display:flex;gap:10px;font-size:13px;color:var(--muted)}
+.mitem.locked{opacity:.6}
+.plan{display:flex;flex-direction:column;gap:18px}
+.plan h2{font-size:22px;font-weight:650;letter-spacing:-.015em}
+.reward{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+.reward .k{display:block;font-size:12.5px;color:var(--muted)}
+.reward .v{font-size:17px;font-weight:640}
+.reqs{display:flex;gap:8px;flex-wrap:wrap}
+.req{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:99px;border:1px solid var(--line);background:#fff;font-size:13.5px}
+.req b{font-weight:650}
+.req.met{border-color:#B9D6BF;background:var(--ok-soft);color:#245d3a}
+.req.miss{border-color:#EBC4BB;background:var(--brick-soft);color:#8e2f20}
+.meter{position:relative}
+.meter .mark{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);border-radius:2px}
+.oplist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r-ctl);overflow:hidden;background:#fff}
+.opr{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--line-soft);cursor:pointer}
+.opr:first-child{border-top:0}
+.opr:hover{background:var(--card-2)}
+.opr.off{opacity:.5;cursor:not-allowed}
+.opr input{width:17px;height:17px;accent-color:var(--primary)}
+.opr .ld{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chance{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.chance .big{font-size:30px;font-weight:700;letter-spacing:-.02em}
+.errs{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:13.5px;color:#8e2f20}
+.errs li::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--brick);margin-right:8px;vertical-align:middle}
+.runs{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:20px}
+.run{padding:14px 16px;border:1px solid var(--line);border-radius:var(--r-card);background:var(--card);display:flex;flex-direction:column;gap:9px}
+.run .t{display:flex;justify-content:space-between;gap:10px;font-weight:600}
+
+/* ---------- skill tree ---------- */
+.sk-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.sk-wrap{position:relative;border-radius:var(--r-card);overflow:hidden;background:var(--spruce);border:1px solid #0E1812;height:clamp(480px,calc(100vh - 215px),980px);user-select:none;-webkit-user-select:none}
+.sk-view{position:absolute;inset:0;cursor:grab;touch-action:none;background-image:radial-gradient(#2A4336 1px,transparent 1.3px);background-size:26px 26px}
+.sk-view.drag{cursor:grabbing}
+.sk-inner{position:absolute;left:0;top:0;transform-origin:0 0}
+.sk-edges{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+.sk-edges path{fill:none;stroke:#2F4A3C;stroke-width:2.2}
+.sk-edges path.e-open{stroke:#7E9889}
+.sk-edges path.e-own{stroke:var(--brass-2)}
+.sk-panel{position:absolute;border:1px solid #2B4538;border-radius:22px;background:rgba(255,255,255,.022)}
+.sk-panel h3{position:absolute;left:24px;top:16px;color:var(--ivory);font-size:21px;font-weight:650;letter-spacing:-.01em}
+.sk-panel .cnt{position:absolute;right:24px;top:21px;color:#7E9889;font-size:13px}
+.sk-lane{position:absolute;color:#8FA698;font-size:11.5px;text-align:center;line-height:1.2;font-weight:500}
+.sk-node{position:absolute;width:36px;height:36px;border-radius:50%;border:1.5px solid #3C5A49;background:#1B2F25;color:#7E9889;font-weight:650;font-size:12.5px;display:grid;place-items:center;padding:0;line-height:1}
+.sk-node span{display:block;pointer-events:none}
+.sk-node.unlock{border-radius:9px;transform:rotate(45deg);width:32px;height:32px;margin:2px}
+.sk-node.unlock span{transform:rotate(-45deg)}
+.sk-node.unlock[data-cat=ammo]{border-color:#9B6244}
+.sk-node.unlock[data-cat=gun]{border-color:#6B819A}
+.sk-node.unlock[data-cat=gear]{border-color:#3C9A92}
+.sk-node.lock{opacity:.42}
+.sk-node.poor{color:#C5D4CA;border-color:#8FA698}
+.sk-node.buy{background:var(--ivory);border-color:var(--ivory);color:var(--spruce)}
+.sk-node.own{background:var(--brass);border-color:var(--brass-2);color:#1b1505}
+.sk-node.sel{outline:2px solid #fff;outline-offset:3px}
+.sk-node:hover{border-color:#fff}
+.sk-zoom{position:absolute;right:14px;top:14px;display:flex;flex-direction:column;gap:6px;z-index:3}
+.sk-zoom button{width:34px;height:34px;border-radius:9px;border:1px solid var(--spruce-3);background:var(--spruce-2);color:var(--ivory);font-size:18px;line-height:1}
+.sk-zoom button:hover{background:var(--spruce-3)}
+.sk-detail{position:absolute;left:14px;bottom:14px;width:min(350px,calc(100% - 28px));background:var(--card);color:var(--ink);border-radius:14px;padding:16px;box-shadow:0 14px 36px rgba(0,0,0,.4);z-index:3;display:flex;flex-direction:column;gap:10px}
+.sk-detail h3{font-size:17px;font-weight:650;line-height:1.25}
+.sk-detail .path{font-size:13px;color:var(--muted)}
+.sk-detail ul{margin:0;padding:0;list-style:none;font-size:13.5px;display:flex;flex-direction:column;gap:3px}
+.sk-detail li.ok{color:var(--ok)} .sk-detail li.no{color:var(--brick)}
+.sk-detail .close{position:absolute;right:8px;top:8px}
+.sk-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:12px}
+.sk-legend span{display:inline-flex;align-items:center;gap:7px}
+.sk-legend i{display:inline-block;width:13px;height:13px;border-radius:50%;border:1.5px solid #3C5A49;background:#1B2F25}
+.sk-legend i.o{background:var(--brass);border-color:var(--brass-2)}
+.sk-legend i.b{background:var(--ivory);border-color:var(--ivory)}
+.sk-legend i.u{border-radius:3px;transform:rotate(45deg) scale(.85)}
+
+/* ---------- players ---------- */
+.social{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.lb .row{grid-template-columns:34px minmax(0,1.6fr) 70px 80px 100px}
+.lb .row.me{background:var(--brass-soft)}
+.chat{display:flex;flex-direction:column;height:min(640px,calc(100vh - 190px))}
+.chatlog{flex:1;overflow:auto;padding:14px 18px;display:flex;flex-direction:column;gap:8px}
+.msg{font-size:14px;overflow-wrap:anywhere}
+.msg b{font-weight:650;margin-right:6px}
+.msg.me b{color:var(--brass-ink)}
+.chatform{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line-soft)}
+
+/* ---------- modal / toast ---------- */
+.scrim{position:fixed;inset:0;background:rgba(15,25,20,.5);display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px 16px;z-index:60;overflow:auto}
+.modal{background:var(--card);border-radius:16px;width:min(560px,100%);box-shadow:0 24px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;max-height:88vh}
+.modal.wide{width:min(760px,100%)}
+.modal>header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px 6px}
+.modal>header h2{font-size:19px;font-weight:650;letter-spacing:-.01em}
+.modal .body{padding:10px 22px 18px;overflow:auto;display:flex;flex-direction:column;gap:14px}
+.modal>footer{display:flex;justify-content:flex-end;gap:10px;padding:14px 22px;border-top:1px solid var(--line-soft)}
+.pick-tools{display:flex;flex-direction:column;gap:10px;padding:6px 22px 12px;border-bottom:1px solid var(--line-soft)}
+.pick-list{overflow:auto;flex:1;padding:0 8px 8px}
+.pick-group{font-size:13px;font-weight:600;color:var(--muted);padding:14px 14px 6px;position:sticky;top:0;background:var(--card);z-index:1}
+.pick{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:10px 14px;border:0;border-radius:10px;background:none;text-align:left}
+.pick:hover{background:var(--card-2)}
+.pick[disabled]{cursor:default}
+.pick .nm{display:flex;gap:10px;align-items:center;min-width:0}
+.pick .nm b{font-weight:600}
+.pick .d{font-size:13px;color:var(--muted);display:block}
+.pick.locked .nm b{color:var(--muted)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:14px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;text-align:right;font-weight:550}
+.qtyrow{display:flex;gap:8px}
+.qtyrow .input{flex:1}
+
+#toasts{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:80;max-width:min(380px,calc(100vw - 36px))}
+.toast{padding:11px 14px;border-radius:10px;background:var(--spruce);color:#F4F6F2;font-size:14px;box-shadow:0 10px 28px rgba(0,0,0,.3);animation:tin .18s ease-out}
+.toast.error{background:#7C2A1E} .toast.ok{background:#1F4A38}
+@keyframes tin{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+
+/* ---------- auth ---------- */
+.auth{min-height:100vh;display:grid;place-items:center;padding:24px}
+.auth-card{width:min(400px,100%);display:flex;flex-direction:column;gap:20px}
+.auth-brand{display:flex;align-items:center;gap:12px;font-size:24px;font-weight:700;letter-spacing:-.02em}
+.auth-brand svg{width:40px;height:40px}
+.auth-card .panel{display:flex;flex-direction:column;gap:16px;padding:24px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;background:#E3E6DF;border-radius:10px}
+.tabs button{padding:8px;border:0;border-radius:7px;background:none;font-weight:550;color:var(--muted)}
+.tabs button[aria-selected=true]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.form-err{min-height:20px;font-size:13.5px;color:var(--brick)}
+.linkbtn{background:none;border:0;padding:0;color:var(--muted);text-decoration:underline;text-underline-offset:2px;font-size:13.5px}
+
+/* ---------- responsive ---------- */
+@media (max-width:1100px){
+  .cols2,.social{grid-template-columns:1fr}
+  .mis{grid-template-columns:1fr}
+  .mlist{position:static;max-height:340px}
+}
+@media (max-width:860px){
+  #app{grid-template-columns:1fr}
+  .side{position:fixed;left:0;right:0;bottom:0;top:auto;height:auto;flex-direction:row;padding:4px 6px calc(4px + env(safe-area-inset-bottom));z-index:40;border-top:1px solid var(--spruce-3)}
+  .brand,.side-foot{display:none}
+  .nav{flex-direction:row;width:100%;justify-content:space-between;gap:0}
+  .nav button{flex-direction:column;gap:2px;padding:6px 0;font-size:10px;letter-spacing:-.01em;text-align:center;justify-content:center;flex:1;min-width:0;position:relative}
+  .nav .badge{position:absolute;right:4px;top:2px;margin:0;min-width:16px;padding:0 5px;font-size:10px}
+  .topbar{padding:10px 16px;gap:16px;overflow-x:auto}
+  .xp{display:none}
+  #page{padding:20px 16px 96px}
+  .wh .row{grid-template-columns:minmax(0,1fr) auto}
+  .wh .row .qtycell{grid-column:1}
+  .wh .row .px{grid-column:1}
+  .wh .row .acts{grid-column:2;grid-row:1/span 3;align-self:center;flex-direction:column}
+  .wh .row.head{display:none}
+  .mk .row{grid-template-columns:minmax(0,1fr) auto}
+  .mk .row.head{display:none}
+  .mk .row .acts{grid-column:2;grid-row:1/span 2}
+  .lb .row{grid-template-columns:28px minmax(0,1fr) 54px 64px}
+  .lb .row .earn{display:none}
+  .guide{grid-template-columns:1fr}
+  .sk-wrap{height:calc(100vh - 290px);min-height:420px}
+  #toasts{bottom:78px;right:12px}
+  .row{padding:12px 14px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal-root"></div>
+<div id="toasts" aria-live="polite"></div>
+<script>
+(() => {
+'use strict';
+/* =====================================================================
+   ARMS DEALER client
+   Talks to Supabase through the ad_* SQL functions only. No libraries.
+   ===================================================================== */
+
+/* ---- Connection settings --------------------------------------------
+   Embedded below. If you ever empty them, the game asks for a project URL
+   and key on first load and remembers them in this browser.             */
+const SUPABASE_URL = 'https://dhqnyhaagwzfrxpdxfvd.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRocW55aGFhZ3d6ZnJ4cGR4ZnZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0ODMwMTksImV4cCI6MjEwNzA1OTAxOX0.YlXKocI1HqqBDQzx6MK1h0y_75ULjlFRjB-Yu6viIzk';   // anon key: public by design, it only reaches the ad_* functions
+const EMBEDDED = !!(SUPABASE_URL && SUPABASE_KEY);
+
+/* ---- helpers ------------------------------------------------------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const mem = {};
+const store = {
+  get(k) { try { const v = localStorage.getItem(k); return v === null ? (mem[k] ?? null) : v; } catch (e) { return mem[k] ?? null; } },
+  set(k, v) { mem[k] = v; try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } },
+  del(k) { delete mem[k]; try { localStorage.removeItem(k); } catch (e) { /* storage unavailable */ } },
+};
+
+const SUF = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp'];
+function fmt(n) {
+  n = Number(n) || 0; const s = n < 0 ? '-' : ''; n = Math.abs(n);
+  if (n < 1000) return s + String(Math.floor(n));
+  let i = 0; while (n >= 1000 && i < SUF.length - 1) { n /= 1000; i++; }
+  return s + (n >= 100 ? n.toFixed(0) : n >= 10 ? n.toFixed(1) : n.toFixed(2)) + SUF[i];
+}
+const usd = n => '$' + fmt(Math.floor(Number(n) || 0));
+const full = n => Math.floor(Number(n) || 0).toLocaleString('en-US');
+const fullUsd = n => '$' + full(n);
+const rate = n => { n = Number(n) || 0; return n < 10 ? n.toFixed(2) : n < 100 ? n.toFixed(1) : fmt(n); };
+const pct = x => Math.round((Number(x) || 0) * 100) + '%';
+function clock(sec) {
+  sec = Math.max(0, Math.ceil(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`;
+}
+function durText(sec) {
+  sec = Math.round(sec); if (sec < 60) return sec + 's'; if (sec < 3600) return Math.round(sec / 60) + ' min';
+  const h = Math.floor(sec / 3600), m = Math.round(sec % 3600 / 60); return m ? `${h}h ${m}m` : `${h}h`;
+}
+function ago(sec) {
+  sec = Math.max(0, sec); if (sec < 60) return 'just now'; if (sec < 3600) return Math.floor(sec / 60) + 'm ago';
+  if (sec < 86400) return Math.floor(sec / 3600) + 'h ago'; return Math.floor(sec / 86400) + 'd ago';
+}
+const cap1 = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+const TAGS = { nvg: 'Night vision', suppressed: 'Suppressed weapons', lockpick: 'Lockpicks', comms: 'Comms', smoke: 'Smoke', breach: 'Breaching', medic: 'Medics', jammer: 'Jammers', armor: 'Armor', drone: 'Drones', hacker: 'Hackers', vehicle: 'Vehicles', overwatch: 'Overwatch', flash: 'Flash', climb: 'Climbing', heavy: 'Heavy weapons' };
+const GRADES = { 1: 'Rookie', 2: 'Professional', 3: 'Elite' };
+const GRADE_MULT = { 1: 1, 2: 1.5, 3: 2.2 };
+const CAT_NAME = { ammo: 'Ammunition', gun: 'Weapons', gear: 'Equipment' };
+const TIER_NAMES = ['', 'Street level', 'Small crews', 'Organized crime', 'Syndicate', 'Big league', 'High stakes', 'Elite jobs', 'Legendary', 'The grand heist'];
+
+const ICON = {
+  production: '<path d="M3 21V11l6 4v-4l6 4V4h5v17z"/>',
+  warehouse: '<path d="M3 8l9-5 9 5v9l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v9"/>',
+  market: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+  skills: '<circle cx="12" cy="5" r="2.2"/><circle cx="5" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/><path d="M12 7.2v4.3M12 11.5L6 17M12 11.5l6 5.5"/>',
+  crew: '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c2.8.2 5 2.4 5 5.3"/>',
+  missions: '<circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>',
+  players: '<path d="M4 5h16v11H9l-5 4z"/>',
+  swap: '<path d="M7 7h11l-3-3M17 17H6l3 3"/>',
+  x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  search: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.2-4.2"/>',
+};
+const svgIcon = (n, cls = '') => `<svg viewBox="0 0 24 24" aria-hidden="true" class="${cls}">${ICON[n]}</svg>`;
+const LOGO = '<svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#1E3429"/><path d="M16 5l9 11-9 11-9-11z" fill="none" stroke="#D2A94A" stroke-width="2"/><circle cx="16" cy="16" r="2.6" fill="#D2A94A"/></svg>';
+const NAV = [
+  { id: 'production', label: 'Production', icon: 'production' },
+  { id: 'warehouse', label: 'Warehouse', icon: 'warehouse' },
+  { id: 'market', label: 'Market', icon: 'market' },
+  { id: 'skills', label: 'Skill tree', icon: 'skills' },
+  { id: 'crew', label: 'Task force', icon: 'crew' },
+  { id: 'missions', label: 'Missions', icon: 'missions' },
+  { id: 'players', label: 'Players', icon: 'players' },
+];
+
+/* ---- catalogue (static game data, loaded once) ---------------------- */
+const G = { items: {}, itemList: [], skills: {}, skillList: [], missions: {}, missionList: [], ammoUsers: {} };
+function indexCatalog(c) {
+  G.itemList = c.items || []; G.skillList = c.skills || []; G.missionList = c.missions || [];
+  G.items = Object.fromEntries(G.itemList.map(i => [i.id, i]));
+  G.skills = Object.fromEntries(G.skillList.map(s => [s.id, s]));
+  G.missions = Object.fromEntries(G.missionList.map(m => [m.id, m]));
+  G.ammoUsers = {};
+  for (const i of G.itemList) if (i.ammo) (G.ammoUsers[i.ammo] = G.ammoUsers[i.ammo] || []).push(i.id);
+}
+
+/* ---- connection + api ------------------------------------------------ */
+function cfg() {
+  const url = (SUPABASE_URL || store.get('ad_url') || '').trim().replace(/\/+$/, '').replace(/\/rest\/v1$/i, '');
+  const key = (SUPABASE_KEY || store.get('ad_key') || '').trim();
+  return url && key ? { url, key } : null;
+}
+async function rpc(fn, args = {}) {
+  const c = cfg(); if (!c) throw new Error('Not connected to a server yet.');
+  const headers = { 'Content-Type': 'application/json', apikey: c.key };
+  if (c.key.startsWith('eyJ')) headers.Authorization = 'Bearer ' + c.key;
+  let res;
+  try { res = await fetch(`${c.url}/rest/v1/rpc/${fn}`, { method: 'POST', headers, body: JSON.stringify(args) }); }
+  catch (e) { const err = new Error('Cannot reach the server. Check your connection.'); err.network = true; throw err; }
+  const text = await res.text(); let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch (e) { data = text; }
+  if (!res.ok) {
+    const msg = (data && (data.message || data.error_description || data.msg || data.hint)) || `Request failed (${res.status})`;
+    const err = new Error(msg); err.status = res.status; err.code = data && data.code; throw err;
+  }
+  return data;
+}
+
+/* ---- state ------------------------------------------------------------ */
+let S = null;                    // latest server snapshot
+let TOKEN = store.get('ad_token');
+const U = { tab: 'production', authMode: 'login', authErr: '', whCat: 'all', mCat: 'all', mq: '', mid: null, msel: new Set(), pv: null, market: { list: [], loaded: false }, chat: { msgs: [], last: 0 }, lb: [], sk: { x: 0, y: 0, k: 0.5, sel: null, q: '' }, P: null };
+let lastSig = '', reqId = 0, lastApplied = 0, pending = 0, lastEventId = null, pollTimer = 0, tickTimer = 0, pollSoonT = 0;
+
+const owned = () => S._own || (S._own = new Set(S.skills));
+const nowS = () => S ? S.now + (Date.now() - S.t0) / 1000 : Date.now() / 1000;
+const isUnlocked = it => !it.unlock_skill || owned().has(it.unlock_skill);
+const fixerPrice = id => G.items[id].base_value * (S.npc[id] ?? 1) * (1 + (S.mods.sell || 0));
+const opLevel = op => Math.floor(Math.sqrt((op.xp || 0) / 25));
+const gearLabel = it => it.tag ? `${TAGS[it.tag] || it.tag}${it.tag_val > 1 ? ' x' + it.tag_val : ''}` : '';
+
+function skillState(sk) {
+  if (owned().has(sk.id)) return 'own';
+  if (!sk.requires.every(r => owned().has(r))) return 'lock';
+  return S.player.sp >= sk.cost ? 'buy' : 'poor';
+}
+function pathCost(id) {
+  const seen = new Set(); let total = 0, steps = 0;
+  (function walk(x) {
+    if (seen.has(x) || owned().has(x)) return; seen.add(x);
+    const sk = G.skills[x]; if (!sk) return; total += sk.cost; steps++; sk.requires.forEach(walk);
+  })(id);
+  return { total, steps };
+}
+function upgradeCost(itemId, level, n) {
+  const it = G.items[itemId], disc = Math.min(S.mods.upg_disc || 0, 0.5); let tot = 0;
+  for (let i = 0; i < n; i++) tot += Math.ceil(it.upg_base * Math.pow(1.17, level - 1 + i) * (1 - disc));
+  return tot;
+}
+function hireCost(tier) {
+  const base = { 1: 400, 2: 6000, 3: 90000 }[tier];
+  return Math.ceil(base * Math.pow(1.4, S.ops.length) * (1 - Math.min(S.mods.hire_disc || 0, 0.5)));
+}
+function opAvailable(op) { return op.status === 'ready' || (op.status === 'wounded' && op.ready_at <= nowS()); }
+function opPower(op) {
+  const it = op.gun && G.items[op.gun]; if (!it) return 0;
+  return it.power * GRADE_MULT[op.tier] * (1 + 0.05 * opLevel(op)) * (1 + (S.mods.power || 0));
+}
+
+/* Estimate where the numbers are right now, between server snapshots. Mirrors the SQL tick. */
+function project() {
+  const dt = Math.max(0, Math.min(20, (Date.now() - S.t0) / 1000));
+  let cash = S.player.cash, xp = S.player.xp; const inv = { ...S.inv }, prog = {}, cap = S.caps.storage;
+  for (const sl of S.slots) {
+    if (!sl.item) continue; const ln = S.lines[sl.item]; if (!ln) continue; const it = G.items[sl.item];
+    const units = Number(sl.progress) + ln.rate * dt; let made = Math.floor(units);
+    if (sl.auto) { if (cash < Math.ceil(ln.unit)) made = 0; }
+    else {
+      if (ln.unit > 0) made = Math.min(made, Math.floor(cash / ln.unit));
+      made = Math.max(0, Math.min(made, cap - (inv[sl.item] || 0)));
+    }
+    if (made > 0) {
+      if (sl.auto) cash += made * (fixerPrice(sl.item) - ln.unit);
+      else { cash -= Math.ceil(made * ln.unit); inv[sl.item] = (inv[sl.item] || 0) + made; }
+      xp += made * it.base_value * 0.05 * (1 + (S.mods.xp_gain || 0));
+    }
+    prog[sl.idx] = units - Math.floor(units);
+  }
+  return { cash, xp, inv, prog };
+}
+function cashRate() {
+  let r = 0;
+  for (const sl of S.slots) {
+    if (!sl.item) continue; const ln = S.lines[sl.item]; if (!ln) continue;
+    if (sl.auto) r += ln.rate * (fixerPrice(sl.item) - ln.unit);
+    else if ((S.inv[sl.item] || 0) < S.caps.storage) r -= ln.rate * ln.unit;
+  }
+  return r;
+}
+
+/* ---- toasts ------------------------------------------------------------ */
+let lastNetToast = 0;
+function toast(msg, kind = 'info') {
+  const box = $('#toasts'); if (!box) return;
+  const el = document.createElement('div'); el.className = 'toast ' + kind; el.textContent = msg; box.appendChild(el);
+  while (box.children.length > 4) box.firstChild.remove();
+  setTimeout(() => el.remove(), kind === 'error' ? 6000 : 4200);
+}
+function handleErr(e, quiet) {
+  if (e && e.network) { if (Date.now() - lastNetToast > 15000) { lastNetToast = Date.now(); toast(e.message, 'error'); } return; }
+  const m = (e && e.message) || 'Something went wrong.';
+  if (/session expired/i.test(m)) { logout(true); return; }
+  if (!quiet) toast(m, 'error');
+}
+
+/* ---- applying server state ---------------------------------------------- */
+function sig() {
+  const p = S.player;
+  return JSON.stringify([U.tab, p.level, p.sp, p.rep, p.slots, S.slots.map(s => [s.idx, s.item, s.auto]),
+    Object.entries(S.lines).map(([k, v]) => [k, v.level]).sort(), Object.keys(S.inv).sort(), S.skills.length,
+    S.ops, S.runs.map(r => [r.id, r.status]), S.caps.slot_cost, S.caps.ops]);
+}
+function applyState(st) {
+  S = st; S.t0 = Date.now();
+  if (S.events && S.events.length) {
+    const maxId = Math.max(...S.events.map(e => e.id));
+    if (lastEventId === null) lastEventId = maxId;
+    else if (maxId > lastEventId) {
+      S.events.filter(e => e.id > lastEventId).reverse().forEach(e => toast(e.msg, /failed|wounded/i.test(e.msg) ? 'error' : /succeeded|reached/i.test(e.msg) ? 'ok' : 'info'));
+      lastEventId = maxId;
+    }
+  } else if (lastEventId === null) lastEventId = 0;
+  updateTopbar();
+  const s = sig();
+  if (s !== lastSig) { lastSig = s; renderPage(false); }
+  tick();
+}
+async function act(fn, args = {}, okMsg) {
+  pending++; const id = ++reqId;
+  try {
+    const st = await rpc(fn, { p_tok: TOKEN, ...args });
+    if (st && st.player) { if (id > lastApplied) { lastApplied = id; applyState(st); } }
+    if (okMsg) toast(okMsg, 'ok');
+    return st || true;
+  } catch (e) { handleErr(e); return null; }
+  finally { pending--; }
+}
+async function poll() {
+  if (!TOKEN || pending || document.hidden || !S) return;
+  const id = ++reqId;
+  try {
+    const st = await rpc('ad_state', { p_tok: TOKEN });
+    if (id > lastApplied && !pending) { lastApplied = id; applyState(st); }
+  } catch (e) { handleErr(e, true); }
+}
+function pollSoon() { clearTimeout(pollSoonT); pollSoonT = setTimeout(poll, 500); }
+
+/* ---- live numbers: runs a few times a second, touches text only -------- */
+function setText(el, t) { if (el.textContent !== t) el.textContent = t; }
+function tick() {
+  if (!S) return;
+  const P = project(); U.P = P; const t = nowS();
+  for (const el of $$('[data-bind]')) {
+    const d = el.dataset;
+    switch (d.bind) {
+      case 'cash': setText(el, usd(P.cash)); break;
+      case 'cashrate': { const r = cashRate(); setText(el, (r >= 0 ? '+$' : '-$') + rate(Math.abs(r)) + '/s'); break; }
+      case 'xpbar': el.style.width = Math.min(100, P.xp / S.player.xp_next * 100) + '%'; break;
+      case 'inv': setText(el, full(P.inv[d.item] || 0)); break;
+      case 'invbar': el.style.width = Math.min(100, (P.inv[d.item] || 0) / S.caps.storage * 100) + '%'; break;
+      case 'prog': {
+        const w = (P.prog[d.idx] || 0) * 100, old = parseFloat(el.style.width) || 0;
+        el.style.transition = w < old - 5 ? 'none' : ''; el.style.width = w + '%'; break;
+      }
+      case 'timer': {
+        const rem = Number(d.ts) - t; setText(el, clock(rem));
+        if (rem <= 0 && !d.done) { d.done = '1'; pollSoon(); }
+        break;
+      }
+      case 'runbar': el.style.width = Math.max(0, Math.min(100, (t - d.start) / (d.end - d.start) * 100)) + '%'; break;
+      case 'whvalue': { let v = 0; for (const [k, q] of Object.entries(P.inv)) if (G.items[k]) v += q * fixerPrice(k); setText(el, usd(v)); break; }
+      case 'px': {
+        setText(el, usd(fixerPrice(d.item)));
+        break;
+      }
+      case 'pxmult': {
+        const m = S.npc[d.item] ?? 1; setText(el, 'x' + m.toFixed(2));
+        el.className = 'pill ' + (m >= 1.06 ? 'ok' : m <= 0.94 ? 'bad' : ''); break;
+      }
+      default: break;
+    }
+  }
+  for (const el of $$('[data-cost]')) el.classList.toggle('poor', P.cash < Number(el.dataset.cost));
+}
+
+/* ---- shell ------------------------------------------------------------- */
+function buildShell() {
+  $('#app').innerHTML = `
+  <aside class="side">
+    <div class="brand">${LOGO}<span>Arms Dealer</span></div>
+    <nav class="nav" aria-label="Main">${NAV.map(n => `<button data-act="nav" data-tab="${n.id}">${svgIcon(n.icon)}<span>${n.label}</span><span class="badge" data-badge="${n.id}" hidden></span></button>`).join('')}</nav>
+    <div class="side-foot"><span class="who" id="who"></span><button data-act="pw">Change password</button><button data-act="logout">Sign out</button></div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="stat"><span class="k">Cash</span><span class="v brass" data-bind="cash">$0</span><span class="sub" data-bind="cashrate" title="Net income per second from production"></span></div>
+      <div class="stat xp"><span class="k">Level <b id="lvl">1</b></span><div class="bar"><i data-bind="xpbar"></i></div></div>
+      <div class="stat"><span class="k">Reputation</span><span class="v" id="rep">0</span></div>
+      <span class="grow"></span>
+      <button class="sp-pill" id="sp" data-act="nav" data-tab="skills"><b>0</b><span>skill points</span></button>
+    </header>
+    <main id="page" tabindex="-1"></main>
+  </div>`;
+}
+function updateTopbar() {
+  const p = S.player;
+  setText($('#who'), p.username); setText($('#lvl'), String(p.level)); setText($('#rep'), full(p.rep));
+  const sp = $('#sp'); if (sp) { setText($('b', sp), String(p.sp)); sp.classList.toggle('has', p.sp > 0); }
+  const active = S.runs.filter(r => r.status === 'active').length;
+  const set = (id, n) => { const b = $(`[data-badge="${id}"]`); if (b) { b.hidden = !n; setText(b, String(n)); } };
+  set('skills', p.sp); set('missions', active);
+}
+function go(tab) {
+  const prev = PAGES[U.tab]; if (prev && prev.leave) prev.leave();
+  U.tab = tab; store.set('ad_tab', tab);
+  $$('.nav button').forEach(b => b.setAttribute('aria-current', b.dataset.tab === tab ? 'page' : 'false'));
+  lastSig = S ? sig() : '';
+  renderPage(true); window.scrollTo(0, 0);
+  const pg = PAGES[tab]; if (pg.enter) pg.enter();
+}
+function renderPage(full) {
+  const pg = PAGES[U.tab], el = $('#page'); if (!pg || !el || !S) return;
+  if (!full && pg.update) { pg.update(); tick(); return; }
+  el.innerHTML = pg.render(); if (pg.after) pg.after(); tick();
+}
+
+/* ---- auth / setup screens ------------------------------------------------ */
+function renderSetup(msg) {
+  stopLoops();
+  if (EMBEDDED) {
+    $('#app').innerHTML = `<div class="auth"><div class="auth-card">
+      <div class="auth-brand">${LOGO.replace('width="30" height="30"', 'width="40" height="40"')}<span>Arms Dealer</span></div>
+      <div class="panel"><div><h2 style="font-size:18px;font-weight:650">Cannot reach the game server</h2>
+      <p class="hint" style="margin-top:4px">${esc(msg || 'Check your connection and try again.')}</p></div>
+      <button class="btn primary block" data-act="retry">Try again</button></div></div></div>`;
+    return;
+  }
+  $('#app').innerHTML = `<div class="auth"><div class="auth-card">
+    <div class="auth-brand">${LOGO.replace('width="30" height="30"', 'width="40" height="40"')}<span>Arms Dealer</span></div>
+    <form class="panel" data-form="setup">
+      <div><h2 style="font-size:18px;font-weight:650">Connect your Supabase project</h2>
+      <p class="hint" style="margin-top:4px">Find both values in the Supabase dashboard under Project settings, API. Run the SQL file first so the game tables exist.</p></div>
+      <div class="field"><label for="su-url">Project URL</label><input class="input" id="su-url" name="url" placeholder="https://abcdefgh.supabase.co" value="${esc(store.get('ad_url') || '')}" autocomplete="off" required></div>
+      <div class="field"><label for="su-key">Anon or publishable key</label><input class="input" id="su-key" name="key" value="${esc(store.get('ad_key') || '')}" autocomplete="off" required></div>
+      <div class="form-err" role="alert">${esc(msg || '')}</div>
+      <button class="btn primary block" type="submit">Connect</button>
+    </form></div></div>`;
+}
+function renderAuth() {
+  stopLoops(); const login = U.authMode === 'login';
+  $('#app').innerHTML = `<div class="auth"><div class="auth-card">
+    <div class="auth-brand">${LOGO.replace('width="30" height="30"', 'width="40" height="40"')}<span>Arms Dealer</span></div>
+    <form class="panel" data-form="auth" novalidate>
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" data-act="auth-mode" data-mode="login" aria-selected="${login}">Sign in</button>
+        <button type="button" role="tab" data-act="auth-mode" data-mode="signup" aria-selected="${!login}">Create account</button>
+      </div>
+      <div class="field"><label for="au-user">Username</label><input class="input" id="au-user" name="user" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="20" required></div>
+      <div class="field"><label for="au-pass">Password</label><input class="input" id="au-pass" name="pass" type="password" autocomplete="${login ? 'current-password' : 'new-password'}" maxlength="72" required></div>
+      ${login ? '' : '<p class="hint">3 to 20 letters, numbers or underscores. Passwords need at least 6 characters. No email needed.</p>'}
+      <div class="form-err" role="alert" id="au-err">${esc(U.authErr)}</div>
+      <button class="btn primary block" type="submit">${login ? 'Sign in' : 'Create account'}</button>
+    </form>
+    ${EMBEDDED ? '' : '<button class="linkbtn" data-act="change-server" style="align-self:center">Change server</button>'}
+  </div></div>`;
+  const f = $('#au-user'); if (f) f.focus();
+}
+async function submitAuth(form) {
+  const user = form.user.value.trim(), pass = form.pass.value, login = U.authMode === 'login';
+  const err = $('#au-err'), btn = $('button[type=submit]', form);
+  if (!user || !pass) { err.textContent = 'Enter a username and password.'; return; }
+  btn.disabled = true; err.textContent = '';
+  try {
+    let res;
+    if (login) {
+      res = await rpc('ad_login', { p_username: user, p_password: pass });
+      if (!res || !res.ok) { err.textContent = (res && res.error) || 'Could not sign in.'; btn.disabled = false; return; }
+    } else res = await rpc('ad_signup', { p_username: user, p_password: pass });
+    TOKEN = res.token; store.set('ad_token', TOKEN); U.authErr = '';
+    await enterGame();
+  } catch (e) { err.textContent = e.message; btn.disabled = false; }
+}
+async function enterGame() {
+  const st = await rpc('ad_state', { p_tok: TOKEN });
+  S = null; lastEventId = null; lastSig = ''; lastApplied = reqId;
+  S = st; S.t0 = Date.now();
+  buildShell(); applyState(st);
+  const tab = store.get('ad_tab'); go(PAGES[tab] ? tab : 'production');
+  startLoops();
+}
+async function logout(expired) {
+  const t = TOKEN; TOKEN = null; store.del('ad_token'); S = null; stopLoops();
+  if (t && !expired) { try { await rpc('ad_logout', { p_tok: t }); } catch (e) { /* ignore */ } }
+  U.authErr = expired ? 'Your session ended. Please sign in again.' : ''; renderAuth();
+}
+function startLoops() { stopLoops(); pollTimer = setInterval(poll, 4000); tickTimer = setInterval(tick, 250); }
+function stopLoops() {
+  clearInterval(pollTimer); clearInterval(tickTimer); clearTimeout(pvTimer);
+  const pg = PAGES[U.tab]; if (pg && pg.leave) pg.leave();
+}
+
+/* =====================================================================
+   Production, item browser, warehouse, market
+   ===================================================================== */
+const PAGES = {};
+
+/* ---- production ------------------------------------------------------- */
+function guideSteps() {
+  const l = S.lines['a_9mm'];
+  return [
+    { done: !!(l && l.level > 1), text: 'Upgrade the 9mm line so it earns faster.' },
+    { done: S.ops.length > 0, text: 'Hire an operative.', tab: 'crew' },
+    { done: S.ops.some(o => o.gun), text: 'Equip a weapon from your warehouse.', tab: 'crew' },
+    { done: S.runs.length > 0, text: 'Launch your first mission.', tab: 'missions' },
+  ];
+}
+function slotCard(sl) {
+  if (!sl.item) {
+    return `<article class="slot empty-slot"><p>Slot ${sl.idx} is idle.</p>
+      <button class="btn primary" data-act="pick" data-slot="${sl.idx}">Choose what to make</button></article>`;
+  }
+  const it = G.items[sl.item], ln = S.lines[sl.item];
+  const price = fixerPrice(it.id), profit = ln.rate * (price - ln.unit);
+  const c1 = upgradeCost(it.id, ln.level, 1), c10 = upgradeCost(it.id, ln.level, 10);
+  const nextBoost = (Math.floor(ln.level / 25) + 1) * 25;
+  const upg = ln.level >= 120
+    ? '<div class="upg" style="grid-template-columns:1fr"><button class="btn" disabled>Max level</button></div>'
+    : `<div class="upg">
+        <button class="btn primary" data-act="upgrade" data-item="${it.id}" data-n="1" data-cost="${c1}" title="Level ${ln.level} to ${ln.level + 1}">Upgrade <span>${usd(c1)}</span></button>
+        <button class="btn" data-act="upgrade" data-item="${it.id}" data-n="10" data-cost="${c10}" title="Ten levels for ${fullUsd(c10)}">x10</button>
+        <button class="btn" data-act="upgrade" data-item="${it.id}" data-n="0" data-cost="${c1}" title="Buy as many levels as you can afford">Max</button>
+      </div>`;
+  return `<article class="slot" data-cat="${it.cat}">
+    <header><span class="dot" style="margin-top:7px"></span>
+      <div><h3>${esc(it.name)}</h3><div class="meta">${esc(it.kind)}, tier ${it.tier}</div></div>
+      <button class="icon-btn push" data-act="pick" data-slot="${sl.idx}" title="Change what this slot makes" aria-label="Change item for slot ${sl.idx}">${svgIcon('swap')}</button></header>
+    <div class="stats">
+      <div><span class="k">Level</span><span class="v">${ln.level}</span></div>
+      <div><span class="k">Output</span><span class="v">${rate(ln.rate)}/s</span></div>
+      <div><span class="k">Profit</span><span class="v ${profit < 0 ? 'bad' : ''}">${profit < 0 ? '-' : ''}$${rate(Math.abs(profit))}/s</span></div>
+    </div>
+    <div class="bar" aria-hidden="true"><i data-bind="prog" data-idx="${sl.idx}"></i></div>
+    <div class="line"><span>Costs <b>${usd(ln.unit)}</b>, Fixer pays <b data-bind="px" data-item="${it.id}">${usd(price)}</b></span>
+      <span>${sl.auto ? 'Selling as made' : `In stock <b data-bind="inv" data-item="${it.id}">0</b>`}</span></div>
+    ${upg}
+    <label class="switch"><input type="checkbox" data-act="auto" data-slot="${sl.idx}" ${sl.auto ? 'checked' : ''}><span class="track"></span><span>Sell output to the Fixer</span></label>
+    ${nextBoost <= 100 && ln.level < 120 ? `<div class="boost">Output doubles at level ${nextBoost}.</div>` : ''}
+  </article>`;
+}
+PAGES.production = {
+  render() {
+    const steps = guideSteps(), showGuide = !store.get('ad_guide_hidden') && S.runs.length === 0;
+    const sc = S.caps.slot_cost;
+    return `<div class="page-head"><div><h1>Production</h1></div><div class="head-actions">
+        <button class="btn" data-act="browse">Browse ${G.itemList.length} items</button>
+        ${sc == null ? '<span class="pill">All slots unlocked</span>' : `<button class="btn primary" data-act="buy-slot" data-cost="${sc}">Buy slot <span>${usd(sc)}</span></button>`}
+      </div></div>
+      ${showGuide ? `<section class="guide"><h2>Getting started</h2><button class="btn sm" data-act="guide-hide">Hide</button>
+        <ol>${steps.map(s => `<li class="${s.done ? 'done' : ''}">${s.tab && !s.done ? `<button data-act="nav" data-tab="${s.tab}">${esc(s.text)}</button>` : esc(s.text)}</li>`).join('')}</ol></section>` : ''}
+      <div class="slot-grid">${S.slots.map(slotCard).join('')}</div>
+      <section class="panel"><h2>Activity</h2>${S.events.length
+        ? `<ul class="feed">${S.events.slice(0, 12).map(e => `<li><span>${esc(e.msg)}</span><time>${ago(S.now - e.t)}</time></li>`).join('')}</ul>`
+        : '<div class="empty">Nothing has happened yet.</div>'}</section>`;
+  },
+};
+
+/* ---- item browser / slot picker ---------------------------------------- */
+function itemSub(it) {
+  if (it.cat === 'gun') return `${esc(it.kind)}, tier ${it.tier}`;
+  if (it.cat === 'ammo') return `${esc(it.kind)} round, tier ${it.tier}`;
+  return `${esc(it.kind)}, tier ${it.tier}`;
+}
+function itemDetail(it) {
+  if (it.cat === 'gun') return `Uses ${esc(G.items[it.ammo].name)}. Firepower ${it.power}${it.tag ? ', ' + esc(gearLabel(it).toLowerCase()) : ''}.`;
+  if (it.cat === 'ammo') { const n = (G.ammoUsers[it.id] || []).length; return n ? `Fired by ${n} weapon${n > 1 ? 's' : ''}.` : ''; }
+  return it.tag ? esc(gearLabel(it)) + '.' : '';
+}
+function openPicker(slot) {
+  U.pick = { slot, q: '', cat: 'all', show: 'all' };
+  openModal({
+    title: slot ? `Slot ${slot}: choose what to make` : 'Everything you can manufacture', wide: true,
+    html: `<div class="pick-tools">
+        <input class="input" data-model="pq" placeholder="Search ${G.itemList.length} items by name, type or calibre" aria-label="Search items" autocomplete="off">
+        <div class="chips" id="pick-cats"></div><div class="chips" id="pick-show"></div></div>
+      <div class="pick-list" id="pick-list"></div>`,
+  });
+  renderPicker();
+}
+function renderPicker() {
+  const P = U.pick; if (!P || !$('#pick-list')) return;
+  const q = P.q.trim().toLowerCase();
+  const inProd = Object.fromEntries(S.slots.filter(s => s.item).map(s => [s.item, s.idx]));
+  const matchQ = i => !q || `${i.name} ${i.kind}`.toLowerCase().includes(q) || (i.ammo && G.items[i.ammo].name.toLowerCase().includes(q));
+  const base = G.itemList.filter(matchQ);
+  const catCount = c => base.filter(i => c === 'all' || i.cat === c).length;
+  $('#pick-cats').innerHTML = ['all', 'ammo', 'gun', 'gear'].map(c =>
+    `<button class="chip" data-act="pick-cat" data-v="${c}" aria-pressed="${P.cat === c}">${c === 'all' ? 'Everything' : CAT_NAME[c]}<span class="n">${catCount(c)}</span></button>`).join('');
+  $('#pick-show').innerHTML = [['all', 'All'], ['open', 'Unlocked'], ['locked', 'Locked']].map(([v, l]) =>
+    `<button class="chip" data-act="pick-show" data-v="${v}" aria-pressed="${P.show === v}">${l}</button>`).join('');
+  const list = base.filter(i => (P.cat === 'all' || i.cat === P.cat) && (P.show === 'all' || (P.show === 'open') === isUnlocked(i)));
+  const groups = new Map();
+  for (const i of list) { const k = i.cat + '|' + i.kind; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(i); }
+  let html = '';
+  for (const [k, items] of groups) {
+    const [cat, kind] = k.split('|');
+    html += `<div class="pick-group">${esc(CAT_NAME[cat])}: ${esc(kind)} (${items.length})</div>`;
+    for (const it of items) {
+      const open = isUnlocked(it);
+      let right;
+      if (open) {
+        const where = inProd[it.id];
+        if (P.slot) right = where === P.slot ? '<span class="pill ok">Current</span>' : where ? `<span class="pill">In slot ${where}</span>` : `<button class="btn sm primary" data-act="set-item" data-slot="${P.slot}" data-item="${it.id}">Make</button>`;
+        else right = where ? `<span class="pill ok">In slot ${where}</span>` : `<button class="btn sm" data-act="produce" data-item="${it.id}">Produce</button>`;
+      } else {
+        const pc = pathCost(it.unlock_skill);
+        right = `<span class="pill brass" title="${pc.steps} skill node${pc.steps > 1 ? 's' : ''} to unlock">${pc.total} SP</span><button class="btn sm" data-act="show-skill" data-id="${it.unlock_skill}">Skill tree</button>`;
+      }
+      html += `<div class="pick ${open ? '' : 'locked'}" data-cat="${it.cat}">
+        <div class="nm"><span class="dot"></span><div><b>${esc(it.name)}</b><span class="d">${itemSub(it)}. ${itemDetail(it)}</span></div></div>
+        <div style="display:flex;gap:8px;align-items:center">${right}</div></div>`;
+    }
+  }
+  $('#pick-list').innerHTML = html || '<div class="empty"><b>No matches</b>Try a different search.</div>';
+}
+
+/* ---- warehouse ---------------------------------------------------------- */
+PAGES.warehouse = {
+  render() {
+    const stocked = G.itemList.filter(i => (S.inv[i.id] || 0) > 0);
+    const cnt = c => stocked.filter(i => c === 'all' || i.cat === c).length;
+    const list = stocked.filter(i => U.whCat === 'all' || i.cat === U.whCat);
+    const rows = list.map(i => {
+      const m = S.npc[i.id] ?? 1;
+      return `<div class="row" data-cat="${i.cat}">
+        <div class="nm"><span class="dot"></span><div><b>${esc(i.name)}</b><br><small>${esc(i.kind)}, tier ${i.tier}</small></div></div>
+        <div class="qtycell"><span><b data-bind="inv" data-item="${i.id}">0</b> <span class="muted">of ${full(S.caps.storage)}</span></span><div class="bar"><i data-bind="invbar" data-item="${i.id}"></i></div></div>
+        <div class="px"><b data-bind="px" data-item="${i.id}">${usd(fixerPrice(i.id))}</b> <span class="${m >= 1.06 ? 'pill ok' : m <= 0.94 ? 'pill bad' : 'pill'}" data-bind="pxmult" data-item="${i.id}">x${m.toFixed(2)}</span></div>
+        <div class="acts">
+          <button class="btn sm" data-act="sell" data-item="${i.id}" data-n="1">Sell 1</button>
+          <button class="btn sm" data-act="sell" data-item="${i.id}" data-n="10">Sell 10</button>
+          <button class="btn sm" data-act="sell" data-item="${i.id}" data-n="0">Sell all</button>
+          <button class="btn sm primary" data-act="list-modal" data-item="${i.id}">List</button>
+        </div></div>`;
+    }).join('');
+    return `<div class="page-head"><div><h1>Warehouse</h1><p class="sub">Worth <b data-bind="whvalue" class="money">$0</b> at today's Fixer prices. Each item stores up to ${full(S.caps.storage)}.</p></div></div>
+      <section class="panel flush wh">
+        <div class="toolbar"><div class="chips">${['all', 'ammo', 'gun', 'gear'].map(c => `<button class="chip" data-act="wh-cat" data-v="${c}" aria-pressed="${U.whCat === c}">${c === 'all' ? 'Everything' : CAT_NAME[c]}<span class="n">${cnt(c)}</span></button>`).join('')}</div></div>
+        ${list.length ? `<div class="rows"><div class="row head"><span>Item</span><span>In stock</span><span>Fixer price</span><span></span></div>${rows}</div>`
+          : '<div class="empty"><b>Nothing in storage</b>Production fills the warehouse. Weapons and equipment you make here are what your task force carries.</div>'}
+      </section>`;
+  },
+};
+
+/* ---- market -------------------------------------------------------------- */
+async function loadMarket() {
+  if (!TOKEN) return;
+  try { U.market.list = await rpc('ad_market', { p_tok: TOKEN }) || []; U.market.loaded = true; renderMarketLists(); }
+  catch (e) { handleErr(e, true); }
+}
+function renderMarketLists() {
+  const box = $('#listings'), mine = $('#mine'); if (!box || !mine || !S) return;
+  const q = U.mq.trim().toLowerCase();
+  const all = U.market.list.filter(l => G.items[l.item]);
+  const others = all.filter(l => !l.mine && (U.mCat === 'all' || G.items[l.item].cat === U.mCat) && (!q || G.items[l.item].name.toLowerCase().includes(q) || G.items[l.item].kind.toLowerCase().includes(q)));
+  box.innerHTML = !U.market.loaded ? '<div class="empty">Loading listings.</div>' : others.length
+    ? `<div class="rows"><div class="row head"><span>Item</span><span>Qty</span><span>Price each</span><span>Seller</span><span></span></div>${others.map(l => {
+      const it = G.items[l.item], fx = fixerPrice(l.item), diff = (l.price - fx) / fx;
+      return `<div class="row" data-cat="${it.cat}">
+        <div class="nm"><span class="dot"></span><div><b>${esc(it.name)}</b><br><small>${esc(it.kind)}, tier ${it.tier}</small></div></div>
+        <span>${full(l.qty)}</span>
+        <span><b>${fullUsd(l.price)}</b><br><small class="${diff < -0.02 ? 'good' : 'muted'}">${Math.abs(Math.round(diff * 100))}% ${diff < 0 ? 'below' : 'above'} Fixer</small></span>
+        <span>${esc(l.seller)}${l.private ? ' <span class="pill brass">For you</span>' : ''}</span>
+        <div class="acts"><button class="btn sm primary" data-act="buy-modal" data-id="${l.id}">Buy</button></div></div>`;
+    }).join('')}</div>`
+    : '<div class="empty"><b>No listings match</b>Other players\' offers appear here. You can also list something yourself.</div>';
+  const my = all.filter(l => l.mine);
+  mine.innerHTML = my.length ? my.map(l => {
+    const it = G.items[l.item];
+    return `<div class="row" style="grid-template-columns:minmax(0,1fr) auto;padding:10px 0"><div><b>${esc(it.name)}</b><br><small class="muted">${full(l.qty)} at ${fullUsd(l.price)}${l.private ? `, private offer to ${esc(l.to)}` : ''}</small></div>
+      <button class="btn sm" data-act="cancel-listing" data-id="${l.id}">Cancel</button></div>`;
+  }).join('') : '<p class="hint">You have nothing listed. Use List on any warehouse item.</p>';
+}
+PAGES.market = {
+  render() {
+    return `<div class="page-head"><div><h1>Market</h1><p class="sub">Trade directly with other players. Sellers pay a ${(S.caps.fee * 100).toFixed(2).replace(/\.?0+$/, '')}% fee.</p></div>
+      <div class="head-actions"><button class="btn primary" data-act="list-modal">List an item</button></div></div>
+      <div class="cols2">
+        <section class="panel flush mk"><div class="toolbar">
+          <input class="input" data-model="mq" placeholder="Search listings" aria-label="Search listings" value="${esc(U.mq)}" autocomplete="off">
+          <div class="chips">${['all', 'ammo', 'gun', 'gear'].map(c => `<button class="chip" data-act="m-cat" data-v="${c}" aria-pressed="${U.mCat === c}">${c === 'all' ? 'Everything' : CAT_NAME[c]}</button>`).join('')}</div></div>
+          <div id="listings"></div></section>
+        <aside style="display:flex;flex-direction:column;gap:20px">
+          <section class="panel"><h2>Your listings</h2><div id="mine"></div></section>
+          <section class="panel"><h2>Private offers</h2><p class="hint">When you list an item you can name a player. Only they will see it, which is the safe way to hand over guns and ammunition for an agreed price.</p></section>
+        </aside></div>`;
+  },
+  after() { renderMarketLists(); },
+  update() { renderMarketLists(); },
+  enter() { U.market.loaded = false; renderMarketLists(); loadMarket(); U.mTimer = setInterval(loadMarket, 6000); },
+  leave() { clearInterval(U.mTimer); },
+};
+
+/* ---- market dialogs ------------------------------------------------------ */
+function openListModal(preItem) {
+  const have = G.itemList.filter(i => (S.inv[i.id] || 0) > 0);
+  if (!have.length) { toast('Your warehouse is empty. Make something first.', 'error'); return; }
+  const first = preItem && S.inv[preItem] ? preItem : have[0].id;
+  openModal({
+    title: 'List an item',
+    html: `<div class="body">
+      <div class="field"><label for="ls-item">Item</label><select class="input" id="ls-item" data-model="ls-item">${have.map(i => `<option value="${i.id}" ${i.id === first ? 'selected' : ''}>${esc(i.name)} (${full(S.inv[i.id])} in stock)</option>`).join('')}</select></div>
+      <div class="field"><label for="ls-qty">Quantity</label><div class="qtyrow"><input class="input" id="ls-qty" type="number" min="1" step="1" inputmode="numeric" data-model="ls-calc"><button class="btn" type="button" data-act="ls-max">All</button></div></div>
+      <div class="field"><label for="ls-price">Price each</label><input class="input" id="ls-price" type="number" min="1" step="1" inputmode="numeric" data-model="ls-calc"><span class="hint" id="ls-ref"></span></div>
+      <div class="field"><label for="ls-target">Offer to one player only (optional)</label><input class="input" id="ls-target" placeholder="Username" autocomplete="off" maxlength="20"></div>
+      <dl class="kv"><dt>Total sale</dt><dd id="ls-total">$0</dd><dt>Market fee</dt><dd id="ls-fee">$0</dd><dt>You receive</dt><dd id="ls-net" class="money">$0</dd></dl></div>`,
+    footer: '<button class="btn" data-act="close">Cancel</button><button class="btn primary" data-act="ls-submit">Create listing</button>',
+  });
+  lsSync(true);
+}
+function lsSync(reset) {
+  const sel = $('#ls-item'); if (!sel) return; const id = sel.value, it = G.items[id], have = S.inv[id] || 0, fx = Math.round(fixerPrice(id));
+  const qty = $('#ls-qty'), price = $('#ls-price');
+  if (reset) { qty.max = have; qty.value = Math.min(have, Math.max(1, Math.round(have / 2))); price.value = fx; }
+  $('#ls-ref').textContent = `The Fixer pays ${fullUsd(fx)} each right now.`;
+  const total = Math.max(0, Math.floor(Number(qty.value) || 0)) * Math.max(0, Math.floor(Number(price.value) || 0));
+  const fee = Math.ceil(total * S.caps.fee);
+  $('#ls-total').textContent = fullUsd(total); $('#ls-fee').textContent = '-' + fullUsd(fee); $('#ls-net').textContent = fullUsd(total - fee);
+  $('#ls-fee').previousElementSibling.textContent = `Market fee (${(S.caps.fee * 100).toFixed(2).replace(/\.?0+$/, '')}%)`;
+}
+function openBuyModal(id) {
+  const l = U.market.list.find(x => String(x.id) === String(id)); if (!l) { toast('That listing is gone.', 'error'); return; }
+  const it = G.items[l.item], afford = Math.max(1, Math.min(l.qty, Math.floor((U.P ? U.P.cash : S.player.cash) / l.price)));
+  openModal({
+    title: `Buy ${it.name}`,
+    html: `<div class="body">
+      <dl class="kv"><dt>Seller</dt><dd>${esc(l.seller)}</dd><dt>Available</dt><dd>${full(l.qty)}</dd><dt>Price each</dt><dd>${fullUsd(l.price)}</dd><dt>Fixer price</dt><dd>${fullUsd(fixerPrice(l.item))}</dd></dl>
+      <div class="field"><label for="by-qty">Quantity</label><div class="qtyrow"><input class="input" id="by-qty" type="number" min="1" max="${l.qty}" step="1" value="${afford}" inputmode="numeric" data-model="by-calc" data-price="${l.price}"><button class="btn" type="button" data-act="by-max" data-max="${afford}">Max</button></div></div>
+      <dl class="kv"><dt>Total</dt><dd id="by-total" class="money">${fullUsd(afford * l.price)}</dd></dl></div>`,
+    footer: `<button class="btn" data-act="close">Cancel</button><button class="btn primary" data-act="by-submit" data-id="${l.id}">Buy</button>`,
+  });
+}
+
+/* =====================================================================
+   Skill tree, task force, missions, players
+   ===================================================================== */
+
+/* ---- skill tree --------------------------------------------------------- */
+const SK = { NODE: 36, GX: 70, GY: 64, PADX: 40, HEAD: 100, M: 70, GAP: 70, COLS: 4, ready: false, skipClick: 0 };
+const BRANCH_ORDER = ['ammo', 'side', 'cqb', 'rifle', 'heavy', 'gear', 'logi', 'ops'];
+function skInit() {
+  if (SK.ready) return;
+  SK.PW = 2 * SK.PADX + 6 * SK.GX; SK.PH = SK.HEAD + 10 * SK.GY + 34;
+  const keys = BRANCH_ORDER.filter(b => G.skillList.some(s => s.branch === b));
+  SK.b = keys.map((key, i) => ({
+    key, i, name: G.skillList.find(s => s.branch === key).branch_name,
+    ox: SK.M + (i % SK.COLS) * (SK.PW + SK.GAP), oy: SK.M + Math.floor(i / SK.COLS) * (SK.PH + SK.GAP),
+    total: G.skillList.filter(s => s.branch === key).length,
+  }));
+  SK.bmap = Object.fromEntries(SK.b.map(b => [b.key, b]));
+  const rows = Math.ceil(SK.b.length / SK.COLS);
+  SK.W = 2 * SK.M + SK.COLS * SK.PW + (SK.COLS - 1) * SK.GAP; SK.H = 2 * SK.M + rows * SK.PH + (rows - 1) * SK.GAP;
+  for (const s of G.skillList) {
+    const it = s.effect.k === 'unlock' ? G.items[s.effect.v] : null;
+    s._item = it; s._idx = `${s.name} ${s.descr} ${it ? it.kind + ' ' + (it.ammo ? G.items[it.ammo].name : '') : ''} ${s.lane_name} ${s.branch_name}`.toLowerCase();
+  }
+  SK.ready = true;
+}
+function nodePos(sk) {
+  const b = SK.bmap[sk.branch];
+  return { cx: b.ox + SK.PADX + (sk.lane - 0.5) * SK.GX, cy: b.oy + SK.HEAD + (sk.tier - 1) * SK.GY + SK.NODE / 2 };
+}
+function skillCanvasHtml() {
+  let edges = '', nodes = '', panels = '';
+  for (const sk of G.skillList) for (const r of sk.requires) {
+    const a = nodePos(G.skills[r]), b = nodePos(sk);
+    edges += `<path data-from="${r}" data-to="${sk.id}" d="M${a.cx} ${a.cy}L${b.cx} ${b.cy}"/>`;
+  }
+  for (const b of SK.b) {
+    let lanes = '';
+    for (let l = 1; l <= 6; l++) {
+      const ls = G.skillList.find(s => s.branch === b.key && s.lane === l); if (!ls) continue;
+      lanes += `<div class="sk-lane" style="left:${b.ox + SK.PADX + (l - 1) * SK.GX + 2}px;top:${b.oy + 54}px;width:${SK.GX - 4}px">${esc(ls.lane_name)}</div>`;
+    }
+    panels += `<div class="sk-panel" style="left:${b.ox}px;top:${b.oy}px;width:${SK.PW}px;height:${SK.PH}px"><h3>${esc(b.name)}</h3><span class="cnt" data-cnt="${b.key}"></span></div>${lanes}`;
+  }
+  for (const sk of G.skillList) {
+    const p = nodePos(sk), it = sk._item;
+    nodes += `<button class="sk-node ${it ? 'unlock' : ''}" ${it ? `data-cat="${it.cat}"` : ''} data-act="sk-node" data-id="${sk.id}" style="left:${p.cx - SK.NODE / 2}px;top:${p.cy - SK.NODE / 2}px" title="${esc(sk.name + '. ' + sk.descr + ' Costs ' + sk.cost + ' skill point' + (sk.cost > 1 ? 's' : '') + '.')}" aria-label="${esc(sk.name)}"><span>${sk.cost}</span></button>`;
+  }
+  return `<svg class="sk-edges" width="${SK.W}" height="${SK.H}" aria-hidden="true">${edges}</svg>${panels}${nodes}`;
+}
+function applyView(animate) {
+  const inner = $('.sk-inner'); if (!inner) return;
+  if (animate) { inner.style.transition = 'transform .35s ease'; clearTimeout(SK.animT); SK.animT = setTimeout(() => { inner.style.transition = ''; }, 400); }
+  inner.style.transform = `translate(${U.sk.x}px,${U.sk.y}px) scale(${U.sk.k})`;
+}
+function fitView(branchKey, animate) {
+  const v = $('.sk-view'); if (!v) return;
+  const vw = v.clientWidth, vh = v.clientHeight; let x0 = 0, y0 = 0, w = SK.W, h = SK.H;
+  if (branchKey) { const b = SK.bmap[branchKey]; x0 = b.ox; y0 = b.oy; w = SK.PW; h = SK.PH; }
+  const pad = 24, k = Math.max(0.2, Math.min(1.4, Math.min((vw - 2 * pad) / w, (vh - 2 * pad) / h)));
+  U.sk.k = k; U.sk.x = (vw - w * k) / 2 - x0 * k; U.sk.y = (vh - h * k) / 2 - y0 * k; applyView(animate);
+}
+function focusNode(id) {
+  const sk = G.skills[id], v = $('.sk-view'); if (!sk || !v) return;
+  const p = nodePos(sk), k = Math.max(U.sk.k, 0.9);
+  U.sk.k = k; U.sk.x = v.clientWidth / 2 - p.cx * k; U.sk.y = v.clientHeight / 2 - p.cy * k; applyView(true);
+}
+function zoomAt(cx, cy, factor) {
+  const v = $('.sk-view'); if (!v) return; const r = v.getBoundingClientRect(), px = cx - r.left, py = cy - r.top;
+  const k = Math.max(0.2, Math.min(1.8, U.sk.k * factor)), f = k / U.sk.k;
+  U.sk.x = px - (px - U.sk.x) * f; U.sk.y = py - (py - U.sk.y) * f; U.sk.k = k; applyView();
+}
+function bindSkillView() {
+  const v = $('.sk-view'); if (!v) return; const pts = new Map(); let drag = null, lastD = 0;
+  v.addEventListener('pointerdown', e => {
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pts.size === 1) drag = { sx: e.clientX, sy: e.clientY, ox: U.sk.x, oy: U.sk.y, moved: false };
+    else if (pts.size === 2) { drag = null; const [a, b] = [...pts.values()]; lastD = Math.hypot(a.x - b.x, a.y - b.y); }
+  });
+  v.addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId)) return; pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pts.size === 2) {
+      const [a, b] = [...pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (lastD) zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, d / lastD); lastD = d;
+    } else if (drag) {
+      const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+      if (!drag.moved && Math.hypot(dx, dy) > 5) { drag.moved = true; v.classList.add('drag'); try { v.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ } }
+      if (drag.moved) { U.sk.x = drag.ox + dx; U.sk.y = drag.oy + dy; applyView(); }
+    }
+  });
+  const end = e => {
+    pts.delete(e.pointerId); if (pts.size < 2) lastD = 0;
+    if (!pts.size) { if (drag && drag.moved) SK.skipClick = Date.now(); drag = null; v.classList.remove('drag'); }
+  };
+  v.addEventListener('pointerup', end); v.addEventListener('pointercancel', end);
+  v.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
+}
+function refreshSkills() {
+  if (!$('.sk-inner')) return;
+  const q = (U.sk.q || '').trim().toLowerCase(); let hits = 0;
+  for (const el of $$('.sk-node')) {
+    const sk = G.skills[el.dataset.id], st = skillState(sk);
+    el.classList.toggle('own', st === 'own'); el.classList.toggle('buy', st === 'buy');
+    el.classList.toggle('poor', st === 'poor'); el.classList.toggle('lock', st === 'lock');
+    el.classList.toggle('sel', U.sk.sel === sk.id);
+    const hit = !!q && sk._idx.includes(q); el.dataset.hit = hit ? '1' : ''; if (hit) hits++;
+    el.style.boxShadow = hit ? '0 0 0 3px #fff, 0 0 18px 4px rgba(242,235,214,.6)' : '';
+    setText($('span', el), st === 'own' ? '✓' : String(sk.cost));
+  }
+  const own = owned();
+  for (const p of $$('.sk-edges path')) {
+    const a = own.has(p.dataset.from), b = own.has(p.dataset.to);
+    p.setAttribute('class', a && b ? 'e-own' : a ? 'e-open' : '');
+  }
+  for (const b of SK.b) { const c = $(`[data-cnt="${b.key}"]`); if (c) setText(c, `${G.skillList.filter(s => s.branch === b.key && own.has(s.id)).length} of ${b.total}`); }
+  const hc = $('#sk-hits'); if (hc) setText(hc, q ? `${hits} match${hits === 1 ? '' : 'es'}` : '');
+  renderSkillDetail();
+}
+function renderSkillDetail() {
+  const box = $('#sk-detail'); if (!box) return; const id = U.sk.sel;
+  if (!id || !G.skills[id]) { box.hidden = true; return; }
+  const sk = G.skills[id], st = skillState(sk), pc = pathCost(id), item = sk._item, sp = S.player.sp;
+  const reqs = sk.requires.map(r => { const has = owned().has(r); return `<li class="${has ? 'ok' : 'no'}">${has ? 'Owned' : 'Missing'}: ${esc(G.skills[r].name)}</li>`; }).join('');
+  let action;
+  if (st === 'own') action = '<span class="pill ok">Owned</span>';
+  else if (st === 'buy') action = `<button class="btn primary" data-act="buy-skill" data-id="${sk.id}">Unlock</button>`;
+  else if (st === 'poor') action = `<button class="btn" disabled>Need ${sk.cost - sp} more</button>`;
+  else action = sp >= pc.total ? `<button class="btn primary" data-act="buy-path" data-id="${sk.id}">Unlock path (${pc.total} SP)</button>` : `<button class="btn" disabled>Path costs ${pc.total} SP</button>`;
+  box.hidden = false;
+  box.innerHTML = `<button class="icon-btn close" data-act="sk-close" aria-label="Close details">${svgIcon('x')}</button>
+    <div><h3>${esc(sk.name)}</h3><div class="path">${esc(sk.branch_name)}, ${esc(sk.lane_name)}, step ${sk.tier}</div></div>
+    <p>${esc(sk.descr)}</p>
+    ${item ? `<p class="hint">${esc(item.kind)}, tier ${item.tier}. ${itemDetail(item)}</p>` : ''}
+    ${reqs ? `<ul>${reqs}</ul>` : '<p class="hint">No prerequisites.</p>'}
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span><b>${sk.cost}</b> skill point${sk.cost > 1 ? 's' : ''}</span>${action}</div>`;
+}
+PAGES.skills = {
+  render() {
+    skInit();
+    return `<div class="page-head"><div><h1>Skill tree</h1><p class="sub">You have <b>${S.player.sp}</b> skill point${S.player.sp === 1 ? '' : 's'}. Level ups and heists earn more. Every item you can manufacture is unlocked here.</p></div></div>
+      <div class="sk-tools"><div class="chips"><button class="chip" data-act="sk-fit" data-b="">Whole tree</button>${SK.b.map(b => `<button class="chip" data-act="sk-fit" data-b="${b.key}">${esc(b.name)}</button>`).join('')}</div>
+        <input class="input" style="max-width:250px;margin-left:auto" data-model="skq" placeholder="Find an item or bonus" aria-label="Find in skill tree" value="${esc(U.sk.q)}" autocomplete="off"><span class="hint" id="sk-hits"></span></div>
+      <div class="sk-wrap"><div class="sk-view"><div class="sk-inner" style="width:${SK.W}px;height:${SK.H}px">${skillCanvasHtml()}</div></div>
+        <div class="sk-zoom"><button data-act="sk-zoom" data-f="1.3" aria-label="Zoom in">+</button><button data-act="sk-zoom" data-f="0.77" aria-label="Zoom out">−</button></div>
+        <div class="sk-detail" id="sk-detail" hidden></div></div>
+      <div class="sk-legend"><span><i class="o"></i>Owned</span><span><i class="b"></i>Ready to unlock</span><span><i></i>Locked or too expensive</span><span><i class="u"></i>Diamond unlocks an item</span><span>The number is the skill point cost. Drag to pan, scroll or pinch to zoom.</span></div>`;
+  },
+  after() {
+    bindSkillView(); refreshSkills();
+    if (U.sk.focus) { focusNode(U.sk.focus); U.sk.focus = null; }
+    else if (!U.sk.init) { fitView(); U.sk.init = true; }
+    else applyView();
+  },
+  update() { refreshSkills(); const s = $('.page-head .sub b'); if (s) setText(s, String(S.player.sp)); },
+};
+async function buyPath(id) {
+  const order = [], seen = new Set();
+  (function walk(x) { if (seen.has(x) || owned().has(x)) return; seen.add(x); G.skills[x].requires.forEach(walk); order.push(x); })(id);
+  for (const x of order) { const r = await act('ad_buy_skill', { p_skill: x }); if (!r) break; }
+}
+
+/* ---- task force ------------------------------------------------------------ */
+const HIRE = {
+  1: { name: 'Rookie', blurb: 'Cheap and untested. Standard firepower.', rep: 0 },
+  2: { name: 'Professional', blurb: 'Seasoned hands. Carries 1.5 times the firepower.', rep: 10 },
+  3: { name: 'Elite', blurb: 'The best money can buy. Carries 2.2 times the firepower.', rep: 120 },
+};
+function opStatus(op) {
+  if (op.status === 'deployed') return '<span class="pill brass">On a mission</span>';
+  if (op.status === 'wounded' && !opAvailable(op)) return `<span class="pill bad">Recovering <span data-bind="timer" data-ts="${op.ready_at}">0:00</span></span>`;
+  return '<span class="pill ok">Ready</span>';
+}
+function loadoutBtn(op, slot, label, wide) {
+  const id = op[slot], it = id && G.items[id], can = op.status === 'ready';
+  return `<button class="slotbtn ${it ? 'filled' : ''} ${wide ? 'wide' : ''}" data-act="equip-open" data-op="${op.id}" data-slot="${slot}" ${can ? '' : 'disabled'} title="${can ? 'Change ' + label.toLowerCase() : 'Not available right now'}">
+    <span class="k">${label}</span><span class="v">${it ? esc(it.name) : 'Empty'}</span>${it && slot !== 'gun' ? `<span class="k">${esc(gearLabel(it))}</span>` : ''}${it && slot === 'gun' ? `<span class="k">${esc(G.items[it.ammo].name)}, ${S.inv[it.ammo] ? full(S.inv[it.ammo]) + ' in stock' : 'none in stock'}</span>` : ''}</button>`;
+}
+function opCard(op) {
+  const pw = opPower(op);
+  return `<article class="op"><header><div><h3>${esc(op.name)}</h3><div class="meta">${GRADES[op.tier]}, level ${opLevel(op)}</div></div><div class="push">${opStatus(op)}</div></header>
+    <div class="loadout">${loadoutBtn(op, 'gun', 'Weapon', true)}${loadoutBtn(op, 'g1', 'Gear 1')}${loadoutBtn(op, 'g2', 'Gear 2')}${loadoutBtn(op, 'g3', 'Gear 3', true)}</div>
+    <footer><span>Firepower <b style="color:var(--ink)">${fmt(pw)}</b></span><button class="btn sm danger" data-act="fire-open" data-op="${op.id}" ${op.status === 'deployed' ? 'disabled' : ''}>Dismiss</button></footer></article>`;
+}
+PAGES.crew = {
+  render() {
+    const n = S.ops.length, capN = S.caps.ops, full_ = n >= capN;
+    const hire = [1, 2, 3].map(t => {
+      const h = HIRE[t], lock = S.player.rep < h.rep, cost = hireCost(t);
+      return `<div class="hire"><h3>${h.name}</h3><p>${h.blurb}</p>
+        ${lock ? `<span class="pill">Needs ${h.rep} reputation</span>` : full_ ? '<span class="pill">Safehouse full</span>' : ''}
+        <button class="btn primary" data-act="hire" data-tier="${t}" data-cost="${cost}" ${lock || full_ ? 'disabled' : ''}>Hire for ${usd(cost)}</button></div>`;
+    }).join('');
+    return `<div class="page-head"><div><h1>Task force</h1><p class="sub">${n} of ${capN} operatives. Arm them from your warehouse, then send them out on missions.</p></div></div>
+      <div class="hire-grid">${hire}</div>
+      ${n ? `<div class="crew-grid">${S.ops.map(opCard).join('')}</div>` : '<section class="panel"><div class="empty"><b>No operatives yet</b>Hire your first rookie above. They carry one weapon and up to three pieces of gear.</div></section>'}`;
+  },
+};
+function openEquip(opId, slot) {
+  const op = S.ops.find(o => o.id === opId); if (!op) return;
+  U.eq = { opId, slot, q: '' };
+  openModal({
+    title: slot === 'gun' ? `${op.name}: choose a weapon` : `${op.name}: choose gear`,
+    html: `<div class="pick-tools"><input class="input" data-model="eq-q" placeholder="Search your warehouse" aria-label="Search" autocomplete="off"></div><div class="pick-list" id="eq-list"></div>`,
+  });
+  renderEquip();
+}
+function renderEquip() {
+  const E = U.eq, box = $('#eq-list'); if (!E || !box) return;
+  const op = S.ops.find(o => o.id === E.opId); if (!op) return;
+  const cur = op[E.slot], want = E.slot === 'gun' ? 'gun' : 'gear', q = E.q.trim().toLowerCase();
+  let items = G.itemList.filter(i => i.cat === want && ((S.inv[i.id] || 0) > 0 || i.id === cur) && (!q || `${i.name} ${i.kind}`.toLowerCase().includes(q)));
+  items.sort((a, b) => (want === 'gun' ? b.power - a.power : b.tier - a.tier) || a.name.localeCompare(b.name));
+  let html = cur ? `<div class="pick"><div class="nm"><div><b>Unequip ${esc(G.items[cur].name)}</b><span class="d">It goes back to your warehouse.</span></div></div><button class="btn sm" data-act="equip-set" data-item="">Unequip</button></div>` : '';
+  html += items.map(it => {
+    const isCur = it.id === cur;
+    return `<div class="pick" data-cat="${it.cat}"><div class="nm"><span class="dot"></span><div><b>${esc(it.name)}</b><span class="d">${itemSub(it)}. ${itemDetail(it)} ${isCur ? '' : full(S.inv[it.id]) + ' in stock.'}</span></div></div>
+      ${isCur ? '<span class="pill ok">Equipped</span>' : `<button class="btn sm primary" data-act="equip-set" data-item="${it.id}">Equip</button>`}</div>`;
+  }).join('');
+  if (!items.length && !cur) html = `<div class="empty"><b>Nothing to equip</b>${want === 'gun' ? 'You have no weapons in the warehouse.' : 'You have no equipment in the warehouse.'} Make some in Production.</div>`;
+  box.innerHTML = html;
+}
+
+/* ---- missions ----------------------------------------------------------------- */
+const missionLocked = m => S.player.rep < m.rep_req;
+const missionPay = m => Math.floor(m.cash * (1 + (S.mods.pay || 0)));
+const missionDur = m => Math.ceil(m.dur_s * (1 - Math.min(S.mods.mission_speed || 0, 0.6)));
+const pvKey = () => `${U.mid}|${[...U.msel].sort().join(',')}`;
+let pvTimer = 0;
+function schedulePreview() {
+  clearTimeout(pvTimer);
+  pvTimer = setTimeout(async () => {
+    const key = pvKey(), mid = U.mid;
+    try {
+      const data = await rpc('ad_preview', { p_tok: TOKEN, p_mission: mid, p_ops: [...U.msel] });
+      if (key === pvKey()) { U.pv = { key, data }; renderPlanResult(); }
+    } catch (e) { handleErr(e, true); }
+  }, 180);
+}
+function runCard(r) {
+  const m = G.missions[r.mission], names = r.ops.map(id => (S.ops.find(o => o.id === id) || {}).name).filter(Boolean);
+  return `<div class="run"><div class="t"><span>${esc(m.name)}</span><span class="muted" data-bind="timer" data-ts="${r.ends}">0:00</span></div>
+    <div class="bar thick" style="--c:var(--brass)"><i data-bind="runbar" data-start="${r.started}" data-end="${r.ends}"></i></div>
+    <div class="hint">${esc(names.join(', '))}. ${pct(r.chance)} chance.</div></div>`;
+}
+function missionList() {
+  let html = '', tier = 0;
+  for (const m of G.missionList) {
+    if (m.tier !== tier) { tier = m.tier; html += `<h3>${esc(TIER_NAMES[tier] || 'Tier ' + tier)}</h3>`; }
+    const lock = missionLocked(m);
+    html += `<button class="mitem ${lock ? 'locked' : ''}" data-act="pick-mission" data-id="${m.id}" aria-current="${U.mid === m.id}">
+      <span class="t"><b>${esc(m.name)}</b><span class="pill ${m.kind}">${cap1(m.kind)}</span></span>
+      <span class="s"><span class="money">${usd(missionPay(m))}</span><span>${durText(missionDur(m))}</span>${lock ? `<span class="bad">Needs ${m.rep_req} rep</span>` : ''}</span></button>`;
+  }
+  return html;
+}
+PAGES.missions = {
+  render() {
+    if (!U.mid || !G.missions[U.mid]) U.mid = (G.missionList.find(m => !missionLocked(m)) || G.missionList[0]).id;
+    const active = S.runs.filter(r => r.status === 'active'), recent = S.runs.filter(r => r.status !== 'active').slice(0, 6);
+    return `<div class="page-head"><div><h1>Missions</h1><p class="sub">Arm your task force, pick a job and send them out. Weapons need their ammunition, and each job asks for specific gear.</p></div></div>
+      ${active.length ? `<div class="runs">${active.map(runCard).join('')}</div>` : ''}
+      <div class="mis"><section class="panel flush mlist">${missionList()}</section>
+      <div style="display:flex;flex-direction:column;gap:20px"><section class="panel plan" id="plan"></section>
+        ${recent.length ? `<section class="panel"><h2>Recent results</h2><ul class="feed">${recent.map(r => {
+          const m = G.missions[r.mission], ok = r.status === 'success';
+          return `<li><span>${esc(m.name)} ${ok ? `<span class="pill ok">Success</span> <span class="money">+${usd(r.outcome && r.outcome.cash)}</span>` : '<span class="pill bad">Failed</span>'}</span><time>${ago(S.now - r.ends)}</time></li>`;
+        }).join('')}</ul></section>` : ''}</div></div>`;
+  },
+  after() { renderPlan(); schedulePreview(); },
+};
+function renderPlan() {
+  const box = $('#plan'); if (!box) return; const m = G.missions[U.mid]; if (!m) return;
+  const lock = missionLocked(m);
+  const avail = S.ops.filter(opAvailable);
+  U.msel = new Set([...U.msel].filter(id => avail.some(o => o.id === id)));
+  box.innerHTML = `<div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h2>${esc(m.name)}</h2><span class="pill ${m.kind}">${cap1(m.kind)}</span></div>
+      <p class="muted" style="margin-top:4px">${esc(m.blurb || '')}</p></div>
+    <div class="reward">
+      <div><span class="k">Payout</span><span class="v money">${usd(missionPay(m))}</span></div>
+      <div><span class="k">Duration</span><span class="v">${durText(missionDur(m))}</span></div>
+      <div><span class="k">Operatives</span><span class="v">${m.min_ops}+</span></div>
+      <div><span class="k">Reputation</span><span class="v">+${m.rep_gain}</span></div>
+      ${m.sp ? `<div><span class="k">Skill points</span><span class="v">+${m.sp}</span></div>` : ''}
+      <div><span class="k">Ammo per operative</span><span class="v">${Math.ceil(m.ammo_per_op * (1 - Math.min(S.mods.ammo_save || 0, 0.75)))}</span></div>
+    </div>
+    ${lock ? `<p class="bad">This job needs ${m.rep_req} reputation. You have ${S.player.rep}.</p>` : ''}
+    <div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>Send who</b>
+      <button class="btn sm" data-act="sel-all">Select all available</button></div>
+      <div class="oplist">${S.ops.length ? S.ops.map(op => {
+        const ok = opAvailable(op), g = op.gun && G.items[op.gun];
+        const gear = [op.g1, op.g2, op.g3].filter(Boolean).map(x => G.items[x].name).join(', ');
+        return `<label class="opr ${ok ? '' : 'off'}"><input type="checkbox" data-act="sel-op" data-id="${op.id}" ${U.msel.has(op.id) ? 'checked' : ''} ${ok ? '' : 'disabled'}>
+          <span style="min-width:0"><b>${esc(op.name)}</b> <span class="muted">${GRADES[op.tier]}</span><br><span class="ld">${g ? esc(g.name) : 'No weapon'}${gear ? ', ' + esc(gear) : ''}</span></span>
+          <span class="muted" style="font-size:13px">${ok ? 'Firepower ' + fmt(opPower(op)) : opStatus(op)}</span></label>`;
+      }).join('') : '<div class="empty" style="padding:18px"><b>No operatives</b>Hire some in Task force.</div>'}</div></div>
+    <div id="plan-result"></div>`;
+  renderPlanResult();
+}
+function renderPlanResult() {
+  const box = $('#plan-result'); if (!box) return; const m = G.missions[U.mid];
+  const pv = U.pv && U.pv.key === pvKey() ? U.pv.data : null;
+  const reqs = Object.entries(m.req).sort((a, b) => b[1] - a[1]).map(([tag, need]) => {
+    const have = pv ? (pv.tags[tag] || 0) : 0, met = have >= need;
+    return `<span class="req ${pv ? (met ? 'met' : 'miss') : ''}"><b>${have}/${need}</b> ${esc(TAGS[tag] || tag)}</span>`;
+  }).join('');
+  const power = pv ? pv.power : 0, scale = m.min_power * 1.5, met = power >= m.min_power;
+  const ammo = pv ? Object.entries(pv.need).map(([id, n]) => {
+    const have = S.inv[id] || 0; return `<span class="req ${have >= n ? 'met' : 'miss'}"><b>${full(n)}</b> ${esc(G.items[id].name)}, ${full(have)} in stock</span>`;
+  }).join('') : '';
+  box.innerHTML = `<div style="display:flex;flex-direction:column;gap:16px">
+    <div><b>Gear this job needs</b><div class="reqs" style="margin-top:8px">${reqs || '<span class="muted">Nothing special.</span>'}</div></div>
+    <div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><b>Firepower</b><span class="${pv && !met ? 'bad' : 'muted'}">${fmt(power)} of ${fmt(m.min_power)} needed</span></div>
+      <div class="meter"><div class="bar thick" style="--c:${met ? 'var(--ok)' : 'var(--brick)'}"><i style="width:${Math.min(100, power / scale * 100)}%"></i></div><span class="mark" style="left:${m.min_power / scale * 100}%"></span></div></div>
+    ${ammo ? `<div><b>Ammunition used</b><div class="reqs" style="margin-top:8px">${ammo}</div></div>` : ''}
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap">
+      <div class="chance"><span class="big">${pv ? pct(pv.chance) : '...'}</span><span class="muted">chance of success</span></div>
+      <button class="btn primary" data-act="launch" ${pv && pv.ok ? '' : 'disabled'}>Launch mission</button></div>
+    ${pv && !pv.ok ? `<ul class="errs">${pv.errors.slice(0, 7).map(e => `<li>${esc(e)}</li>`).join('')}</ul>` : ''}</div>`;
+}
+
+/* ---- players -------------------------------------------------------------------- */
+async function loadLB() { try { U.lb = await rpc('ad_leaderboard') || []; renderLB(); } catch (e) { handleErr(e, true); } }
+function renderLB() {
+  const box = $('#lb'); if (!box || !S) return;
+  box.innerHTML = U.lb.length ? `<div class="rows"><div class="row head"><span>#</span><span>Dealer</span><span>Level</span><span>Heists</span><span class="earn">Earned</span></div>${U.lb.map((p, i) =>
+    `<div class="row ${p.user === S.player.username ? 'me' : ''}"><span class="muted">${i + 1}</span><span class="nm"><b>${esc(p.user)}</b></span><span>${p.level}</span><span>${p.won}</span><span class="earn money">${usd(p.earned)}</span></div>`).join('')}</div>`
+    : '<div class="empty">No dealers yet.</div>';
+}
+async function loadChat() {
+  try {
+    const rows = await rpc('ad_chat_get', { p_tok: TOKEN, p_after: U.chat.last }) || [];
+    if (rows.length) { const have = new Set(U.chat.msgs.map(m => m.id)); rows.forEach(r => { if (!have.has(r.id)) U.chat.msgs.push(r); }); U.chat.msgs.sort((a, b) => a.id - b.id); U.chat.msgs = U.chat.msgs.slice(-120); U.chat.last = U.chat.msgs[U.chat.msgs.length - 1].id; renderChat(); }
+  } catch (e) { handleErr(e, true); }
+}
+function renderChat(force) {
+  const box = $('#chatlog'); if (!box || !S) return;
+  const near = force || box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+  box.innerHTML = U.chat.msgs.length ? U.chat.msgs.map(m => `<div class="msg ${m.user === S.player.username ? 'me' : ''}"><b>${esc(m.user)}</b>${esc(m.msg)}</div>`).join('')
+    : '<div class="empty"><b>Quiet in here</b>Say something to the other dealers.</div>';
+  if (near) box.scrollTop = box.scrollHeight;
+}
+PAGES.players = {
+  render() {
+    return `<div class="page-head"><div><h1>Players</h1><p class="sub">Ranked by heists completed.</p></div></div>
+      <div class="social"><section class="panel flush chat"><h2 style="padding:18px 18px 0;margin:0;font-size:17px;font-weight:650">Dealer chat</h2><div class="chatlog" id="chatlog" aria-live="polite"></div>
+        <form class="chatform" data-form="chat"><input class="input" name="msg" maxlength="200" placeholder="Message everyone" aria-label="Message" autocomplete="off"><button class="btn primary" type="submit">Send</button></form></section>
+      <section class="panel flush lb"><h2 style="padding:18px 18px 12px;margin:0;font-size:17px;font-weight:650">Leaderboard</h2><div id="lb"></div></section></div>`;
+  },
+  after() { renderLB(); renderChat(true); },
+  enter() { loadLB(); loadChat(); U.pT = [setInterval(loadChat, 3000), setInterval(loadLB, 20000)]; },
+  leave() { (U.pT || []).forEach(clearInterval); U.pT = []; },
+};
+
+/* =====================================================================
+   Dialogs, events, boot
+   ===================================================================== */
+
+/* ---- modal ------------------------------------------------------------------ */
+let lastFocus = null;
+function openModal({ title, html, footer, wide }) {
+  closeModal(true); lastFocus = document.activeElement;
+  $('#modal-root').innerHTML = `<div class="scrim" data-act="scrim"><div class="modal ${wide ? 'wide' : ''}" role="dialog" aria-modal="true" aria-label="${esc(title)}" tabindex="-1">
+    <header><h2>${esc(title)}</h2><button class="icon-btn" data-act="close" aria-label="Close">${svgIcon('x')}</button></header>${html}${footer ? `<footer>${footer}</footer>` : ''}</div></div>`;
+  const m = $('.modal'), first = $('input:not([type=checkbox]), select', m); (first || m).focus();
+}
+function closeModal(silent) {
+  const root = $('#modal-root'); if (!root || !root.firstChild) return;
+  root.innerHTML = ''; U.pick = null; U.eq = null;
+  if (!silent && lastFocus && document.contains(lastFocus)) { try { lastFocus.focus(); } catch (e) { /* ignore */ } }
+}
+function openFire(opId) {
+  const op = S.ops.find(o => o.id === opId); if (!op) return;
+  openModal({ title: `Dismiss ${op.name}?`, html: '<div class="body"><p>Their weapon and gear go back to your warehouse. You will have to pay to hire a replacement.</p></div>',
+    footer: `<button class="btn" data-act="close">Keep</button><button class="btn danger" data-act="fire-confirm" data-op="${op.id}">Dismiss</button>` });
+}
+function openPw() {
+  openModal({ title: 'Change password', html: `<div class="body">
+    <div class="field"><label for="pw-old">Current password</label><input class="input" id="pw-old" type="password" autocomplete="current-password"></div>
+    <div class="field"><label for="pw-new">New password</label><input class="input" id="pw-new" type="password" autocomplete="new-password" maxlength="72"><span class="hint">At least 6 characters.</span></div></div>`,
+    footer: '<button class="btn" data-act="close">Cancel</button><button class="btn primary" data-act="pw-submit">Change password</button>' });
+}
+
+/* ---- actions (everything with data-act) ------------------------------------------ */
+const ACT = {
+  nav: el => go(el.dataset.tab),
+  logout: () => logout(),
+  pw: openPw,
+  'pw-submit': async () => {
+    try { await rpc('ad_change_password', { p_tok: TOKEN, p_old: $('#pw-old').value, p_new: $('#pw-new').value }); closeModal(); toast('Password changed.', 'ok'); }
+    catch (e) { handleErr(e); }
+  },
+  'auth-mode': el => { U.authMode = el.dataset.mode; U.authErr = ''; renderAuth(); },
+  'change-server': () => renderSetup(),
+  retry: () => start(),
+  close: () => closeModal(),
+  scrim: (el, e) => { if (e.target === el) closeModal(); },
+  'guide-hide': () => { store.set('ad_guide_hidden', '1'); renderPage(true); },
+
+  browse: () => openPicker(null),
+  pick: el => openPicker(Number(el.dataset.slot)),
+  'pick-cat': el => { U.pick.cat = el.dataset.v; renderPicker(); },
+  'pick-show': el => { U.pick.show = el.dataset.v; renderPicker(); },
+  'set-item': async el => { const r = await act('ad_set_slot', { p_idx: Number(el.dataset.slot), p_item: el.dataset.item }); if (r) closeModal(); },
+  produce: async el => {
+    const free = S.slots.find(s => !s.item);
+    if (!free) { toast('All your slots are busy. Use the swap button on a slot to replace what it makes.', 'error'); return; }
+    const r = await act('ad_set_slot', { p_idx: free.idx, p_item: el.dataset.item }, `Slot ${free.idx} is now making ${G.items[el.dataset.item].name}.`);
+    if (r) renderPicker();
+  },
+  'show-skill': el => { U.sk.sel = el.dataset.id; U.sk.focus = el.dataset.id; closeModal(); go('skills'); },
+  upgrade: el => act('ad_upgrade', { p_item: el.dataset.item, p_times: Number(el.dataset.n) }),
+  'buy-slot': () => act('ad_buy_slot', {}, 'New production slot unlocked.'),
+  sell: el => act('ad_sell_npc', { p_item: el.dataset.item, p_qty: Number(el.dataset.n) }, `Sold ${G.items[el.dataset.item].name} to the Fixer.`),
+  'wh-cat': el => { U.whCat = el.dataset.v; renderPage(true); },
+
+  'm-cat': el => { U.mCat = el.dataset.v; $$('[data-act="m-cat"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === U.mCat)); renderMarketLists(); },
+  'list-modal': el => openListModal(el.dataset.item),
+  'ls-max': () => { const q = $('#ls-qty'); q.value = q.max; lsSync(); },
+  'ls-submit': async () => {
+    const r = await act('ad_list', { p_item: $('#ls-item').value, p_qty: Math.floor(Number($('#ls-qty').value) || 0), p_price: Math.floor(Number($('#ls-price').value) || 0), p_target: $('#ls-target').value.trim() || null }, 'Listing created.');
+    if (r) { closeModal(); loadMarket(); }
+  },
+  'buy-modal': el => openBuyModal(el.dataset.id),
+  'by-max': el => { const q = $('#by-qty'); q.value = el.dataset.max; byCalc(); },
+  'by-submit': async el => {
+    const r = await act('ad_buy', { p_listing: Number(el.dataset.id), p_qty: Math.floor(Number($('#by-qty').value) || 0) }, 'Purchase complete.');
+    if (r) { closeModal(); loadMarket(); }
+  },
+  'cancel-listing': async el => { const r = await act('ad_cancel', { p_listing: Number(el.dataset.id) }, 'Listing cancelled.'); if (r) loadMarket(); },
+
+  'sk-node': el => { if (Date.now() - SK.skipClick < 250) return; U.sk.sel = el.dataset.id; refreshSkills(); },
+  'sk-close': () => { U.sk.sel = null; refreshSkills(); },
+  'sk-fit': el => fitView(el.dataset.b || null, true),
+  'sk-zoom': el => { const r = $('.sk-view').getBoundingClientRect(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, Number(el.dataset.f)); },
+  'buy-skill': el => act('ad_buy_skill', { p_skill: el.dataset.id }),
+  'buy-path': el => buyPath(el.dataset.id),
+
+  hire: el => act('ad_hire', { p_tier: Number(el.dataset.tier) }, 'Operative hired.'),
+  'equip-open': el => openEquip(el.dataset.op, el.dataset.slot),
+  'equip-set': async el => {
+    const E = U.eq; if (!E) return;
+    const r = await act('ad_equip', { p_op: E.opId, p_slot: E.slot, p_item: el.dataset.item || null }); if (r) closeModal();
+  },
+  'fire-open': el => openFire(el.dataset.op),
+  'fire-confirm': async el => { const r = await act('ad_fire', { p_op: el.dataset.op }, 'Operative dismissed.'); if (r) closeModal(); },
+
+  'pick-mission': el => {
+    U.mid = el.dataset.id; U.pv = null;
+    $$('.mitem').forEach(b => b.setAttribute('aria-current', b.dataset.id === U.mid));
+    renderPlan(); schedulePreview();
+  },
+  'sel-all': () => {
+    const armed = new Set(S.ops.filter(o => opAvailable(o) && o.gun).map(o => o.id));
+    armed.forEach(id => U.msel.add(id));
+    $$('[data-act="sel-op"]').forEach(c => { if (armed.has(c.dataset.id)) c.checked = true; });
+    renderPlanResult(); schedulePreview();
+  },
+  launch: async () => {
+    const r = await act('ad_launch', { p_mission: U.mid, p_ops: [...U.msel] }, 'Task force deployed.');
+    if (r) { U.msel.clear(); U.pv = null; renderPage(true); schedulePreview(); }
+  },
+};
+function byCalc() {
+  const q = $('#by-qty'); if (!q) return;
+  $('#by-total').textContent = fullUsd(Math.max(0, Math.floor(Number(q.value) || 0)) * Number(q.dataset.price));
+}
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el || el.matches('input[type=checkbox]')) return;
+  const fn = ACT[el.dataset.act]; if (!fn) return;
+  if (el.disabled) return;
+  if (el.dataset.cost && el.classList.contains('poor')) { toast('You cannot afford that yet.', 'error'); return; }
+  fn(el, e);
+});
+document.addEventListener('change', e => {
+  const el = e.target; if (!el.matches || !el.matches('input[type=checkbox][data-act]')) return;
+  if (el.dataset.act === 'auto') act('ad_set_auto', { p_idx: Number(el.dataset.slot), p_auto: el.checked });
+  else if (el.dataset.act === 'sel-op') {
+    if (el.checked) U.msel.add(el.dataset.id); else U.msel.delete(el.dataset.id);
+    renderPlanResult(); schedulePreview();
+  }
+});
+document.addEventListener('input', e => {
+  const el = e.target, m = el.dataset && el.dataset.model; if (!m) return;
+  switch (m) {
+    case 'pq': U.pick.q = el.value; renderPicker(); break;
+    case 'eq-q': U.eq.q = el.value; renderEquip(); break;
+    case 'mq': U.mq = el.value; renderMarketLists(); break;
+    case 'skq': U.sk.q = el.value; refreshSkills(); break;
+    case 'ls-item': lsSync(true); break;
+    case 'ls-calc': lsSync(); break;
+    case 'by-calc': byCalc(); break;
+    default: break;
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Enter' && e.target.dataset && e.target.dataset.model === 'skq') {
+    e.preventDefault(); const h = $('.sk-node[data-hit="1"]');
+    if (h) { U.sk.sel = h.dataset.id; focusNode(h.dataset.id); refreshSkills(); }
+  }
+  if (e.key === 'Tab') {
+    const m = $('.modal'); if (!m) return;
+    const f = $$('button:not([disabled]), input:not([disabled]), select, [tabindex="0"]', m).filter(x => x.offsetParent !== null);
+    if (!f.length) return; const a = f[0], z = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); }
+    else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); }
+  }
+});
+document.addEventListener('submit', async e => {
+  const f = e.target.closest('form[data-form]'); if (!f) return; e.preventDefault();
+  if (f.dataset.form === 'setup') {
+    store.set('ad_url', f.url.value.trim()); store.set('ad_key', f.key.value.trim()); start();
+  } else if (f.dataset.form === 'auth') submitAuth(f);
+  else if (f.dataset.form === 'chat') {
+    const inp = f.msg, msg = inp.value.trim(); if (!msg) return; inp.value = '';
+    try { await rpc('ad_chat_send', { p_tok: TOKEN, p_msg: msg }); loadChat(); } catch (err) { handleErr(err); inp.value = msg; }
+  }
+});
+document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
+
+/* ---- boot ---------------------------------------------------------------------------- */
+async function start() {
+  if (!cfg()) { renderSetup(); return; }
+  try { if (!G.itemList.length) indexCatalog(await rpc('ad_catalog')); }
+  catch (e) {
+    renderSetup(e.network ? (EMBEDDED ? 'Check your internet connection and try again.' : 'Cannot reach that server. Check the project URL.') : `The game tables are not installed on this Supabase project yet. Run the SQL file in the Supabase SQL editor, then try again. (${e.message})`);
+    return;
+  }
+  if (TOKEN) {
+    try { await enterGame(); return; }
+    catch (e) {
+      if (e.network) { U.authErr = e.message; }
+      else { TOKEN = null; store.del('ad_token'); }
+    }
+  }
+  renderAuth();
+}
+start();
+
+})();
+</script>
+</body>
+</html>
